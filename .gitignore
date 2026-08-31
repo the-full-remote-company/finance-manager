@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Test / coverage output
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.nyc_output/
+
+# Environment — secrets never enter this repository (constitution, Article VIII)
+.env
+.env.*
+!.env.example
+
+# Turborepo
+.turbo/
+
+# Editor / OS
+.DS_Store
+.idea/
+*.swp
+
+# Machine-local agent config: contains a personal Google Cloud project id.
+# Remove this line if the team wants a shared committed config.
+opencode.json
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
