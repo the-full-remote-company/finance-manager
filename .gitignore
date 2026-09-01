@@ -37,3 +37,8 @@ opencode.json
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Personal financial data — MUST NOT be committed (public repo)
+Finanz*.xlsx
+*.xlsx
+*.csv
