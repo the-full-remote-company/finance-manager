@@ -463,8 +463,8 @@ is present. Then delete the account and verify no data remains reachable in any 
   one of the 13 categories in a chosen month, the category total matches the spreadsheet
   to the cent.
 - **SC-002**: Smoothed amounts for every non-monthly commitment sum, across a full rhythm
-  period, to exactly the charge amount, verified for at least 1.000 generated amount and
-  period combinations.
+  period, to exactly the charge amount, verified for at least one thousand generated
+  amount and period combinations.
 - **SC-003**: The transfer list for a chosen month matches the amounts the user currently
   transfers by hand, to the cent, for every destination that does not depend on a second
   person's share.
