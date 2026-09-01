@@ -8,6 +8,16 @@
 
 **Input**: User description: "Replace the spreadsheet I use to plan my monthly fixed incomes and expenses. Each entry has a category, a source account, a payment rhythm, a contract end date and a description. The main view is a dashboard showing all incomes and expenses summed per category per month. It must also show which money has to be transferred from one account to another in a given month."
 
+## Clarifications
+
+### Session 2026-09-01
+
+- Q: When you try to delete a category or an account that commitments still point at, what should happen? (FR-009) → A: Block the deletion, showing how many commitments reference it; renaming remains freely available.
+- Q: If a commitment starts on 15 March, does March count as a month it applies to, or does it begin in April? (FR-026) → A: Whole months, inclusive at both ends. Any date falling within a month makes that whole month count, and amounts are never prorated.
+- Q: A quarterly insurance of 300 € is charged in January but the contract ends in February — what should the smoothed view show? (FR-027, FR-028) → A: Smooth across the full period, then display only the active months. January 100 €, February 100 €, March's share dropped. Smoothing is a presentation aid, never a restatement of what is owed.
+- Q: When several commitments with share percentages are added up for a transfer, where should the cents be rounded? (FR-039) → A: Round each commitment's share to whole cents as it is computed, then sum. Every displayed line is a transferable amount and the total is the sum of the lines.
+- Q: When you open the app on your phone with no signal, what should you be able to do? (Story 3) → A: Read-only cache. Previously viewed months remain readable and are marked as possibly stale; saving requires a connection. No offline editing and no sync queue.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The user currently maintains a spreadsheet with roughly 120 expense entries across 13
@@ -61,16 +71,19 @@ persist with every field intact.
 1. **Given** an empty workspace, **When** the user creates an account named
    "Girokonto" and a category named "Wohnen", **Then** both are available for
    selection when creating a commitment.
-2. **Given** a category and an account exist, **When** the user creates an expense
+2. **Given** a category referenced by commitments, **When** the user attempts to delete
+   it, **Then** the deletion is refused and the number of referencing commitments is
+   shown; renaming the same category succeeds.
+3. **Given** a category and an account exist, **When** the user creates an expense
    "Miete" of 950,00 € charged monthly to that account, **Then** it appears in the
    commitment list under that category.
-3. **Given** an existing commitment, **When** the user edits its amount, category,
+4. **Given** an existing commitment, **When** the user edits its amount, category,
    account or description, **Then** the change is reflected everywhere it appears.
-4. **Given** an existing commitment, **When** the user deletes it, **Then** it no longer
+5. **Given** an existing commitment, **When** the user deletes it, **Then** it no longer
    appears in any month, including past months in the horizon.
-5. **Given** the user is creating a commitment, **When** they omit a required field,
+6. **Given** the user is creating a commitment, **When** they omit a required field,
    **Then** the system explains which field is missing and does not save.
-6. **Given** amounts are entered, **When** they are displayed, **Then** they are formatted
+7. **Given** amounts are entered, **When** they are displayed, **Then** they are formatted
    in German locale conventions with a euro symbol.
 
 ---
@@ -104,6 +117,11 @@ percentages match those totals divided by that month's income.
    consistently.
 6. **Given** the dashboard is viewed on a phone, **When** the user reads it, **Then** all
    figures are legible without horizontal scrolling.
+7. **Given** a month has been viewed before, **When** the device is offline and the user
+   opens that month, **Then** the figures are shown together with an indication that
+   they may be out of date and when they were retrieved.
+8. **Given** the device is offline, **When** the user attempts to save any change,
+   **Then** the change is refused with an explanation and is not queued.
 
 ---
 
@@ -134,9 +152,13 @@ total 264,12 € over twelve months.
 4. **Given** a charge amount that does not divide evenly across its period, **When** the
    smoothed view is shown, **Then** the smoothed amounts across one full period sum
    exactly to the charge amount, with no cent gained or lost.
-5. **Given** either view is selected, **When** the user navigates between months or
+5. **Given** a quarterly commitment of 240,00 € anchored to January that ends in
+   February, **When** the smoothed view is shown, **Then** January and February each
+   show 80,00 € and March shows nothing, and the cash view still shows the full
+   240,00 € in January.
+6. **Given** either view is selected, **When** the user navigates between months or
    returns to the dashboard later, **Then** the chosen view is retained.
-6. **Given** a one-off commitment, **When** it is projected, **Then** it appears in its
+7. **Given** a one-off commitment, **When** it is projected, **Then** it appears in its
    single specified month in the cash view and is not smoothed across other months.
 
 ---
@@ -194,9 +216,12 @@ for the selected month.
    attempts to save it, **Then** the system refuses and explains why.
 5. **Given** a month in which no commitment routes anywhere, **When** the transfer view is
    shown, **Then** an explanatory empty state is displayed rather than a blank screen.
-6. **Given** share percentages produce a fractional cent, **When** amounts are summed,
-   **Then** the displayed total is exact to the cent and rounding is applied once, at a
-   defined point, not repeatedly.
+6. **Given** a commitment of 40,01 € at a 50% share, **When** the transfer view is
+   shown, **Then** its line reads 20,01 € and the destination total includes exactly
+   that figure.
+7. **Given** several shared commitments contribute to one destination, **When** the
+   transfer view is shown, **Then** the destination total equals the sum of the
+   displayed lines with no reconciling difference.
 
 ---
 
@@ -215,15 +240,17 @@ included in months up to and including that date and absent from every month aft
 
 **Acceptance Scenarios**:
 
-1. **Given** a commitment with a start date, **When** months before that date are viewed,
-   **Then** the commitment does not appear in them.
-2. **Given** a commitment with a contract end date, **When** months after that date are
-   viewed, **Then** the commitment does not appear and totals exclude it.
-3. **Given** a commitment with a notice deadline approaching, **When** the user views the
+1. **Given** a commitment with a start date, **When** months before the month of that
+   date are viewed, **Then** the commitment does not appear in them.
+2. **Given** a commitment starting on 15 March, **When** March is viewed, **Then** the
+   commitment appears with its full amount, not a part of it.
+3. **Given** a commitment with a contract end date, **When** months after the month of
+   that date are viewed, **Then** the commitment does not appear and totals exclude it.
+4. **Given** a commitment with a notice deadline approaching, **When** the user views the
    commitment list, **Then** that deadline is visible without opening the record.
-4. **Given** an end date earlier than the start date, **When** the user saves, **Then**
+5. **Given** an end date earlier than the start date, **When** the user saves, **Then**
    the system refuses and explains why.
-5. **Given** a commitment with a free-text description, **When** it is displayed, **Then**
+6. **Given** a commitment with a free-text description, **When** it is displayed, **Then**
    the description is available without leaving the list.
 
 ---
@@ -289,18 +316,32 @@ is present. Then delete the account and verify no data remains reachable in any 
   explanation (FR-014).
 - A charge amount does not divide evenly by its period, e.g. 100,00 € quarterly →
   smoothed months must sum to exactly 100,00 € per period, never 99,99 € or 100,02 €.
-- A commitment ends part-way through a rhythm period → the cash view shows a charge only
-  if the due month falls on or before the end date; the smoothed view shows smoothed
-  amounts only for months in which the commitment is active.
+- A commitment ends part-way through a rhythm period → the cash view shows the charge
+  only if the due month falls within the active months; the smoothed view shows the
+  unchanged per-month share for the active months and simply omits the rest, so the
+  smoothed total for that period is less than the charge.
+- A commitment starts part-way through a rhythm period, after the due month → the cash
+  view shows nothing for that period, while the smoothed view still shows the share for
+  the active months. The two views legitimately disagree here.
 - A commitment's start date falls after its anchor month → the first due month is the
-  first occurrence on or after the start date.
-- A category is deleted while commitments reference it → the system must either block
-  deletion or require reassignment; silent orphaning is not acceptable.
-- An account is deleted while referenced as a source or transfer destination → same
-  treatment as categories.
+  first occurrence on or after the start month.
+- A commitment starts and ends within the same month → that single month counts in full.
+- Two amounts have effective dates on different days of the same month → rejected, since
+  both would be in force from the same month and the outcome would be undefined.
+- A category is deleted while commitments reference it → deletion is refused and the
+  number of referencing commitments is shown; the user renames or edits instead.
+- An account is deleted while referenced as a source or as a transfer destination → same
+  treatment as categories; both reference kinds count toward the reported total.
+- The last remaining category or account is deleted while unreferenced → permitted; the
+  commitment form must then explain that a category or account has to be created first.
 - A transfer destination equals the source account → rejected.
 - A share percentage of 0 → the commitment contributes nothing to transfers but still
   appears in category totals; this must be deliberate and consistent.
+- A share percentage produces exactly half a minor unit, e.g. 50% of 40,01 € → rounded
+  half-up to 20,01 €, and the same input always produces the same output.
+- Rounded shares of several commitments to one destination each gain a cent → the
+  destination total is the sum of those rounded lines and may exceed the exact
+  mathematical total; this is accepted, because every line must be transferable.
 - Total income for a month is zero → percentage of income is suppressed, not divided by
   zero.
 - A month at the very edge of the 24-month horizon → navigation stops at the boundary
@@ -314,8 +355,15 @@ is present. Then delete the account and verify no data remains reachable in any 
   duplicate overrides may exist.
 - A very long commitment or category name on a narrow screen → truncated with the full
   value still reachable, never overlapping other figures.
-- The user's device is offline → the most recently viewed months remain readable, and
-  any attempt to save explains that the change cannot be stored yet.
+- The user's device is offline and opens a previously viewed month → the cached figures
+  are shown, marked as possibly out of date with the time they were retrieved.
+- The user's device is offline and opens a month never viewed before → an explicit "not
+  available offline" state is shown, distinct from a month that genuinely has no data.
+- The user's device is offline and attempts to save → the change is refused with an
+  explanation, and is neither queued nor silently retried.
+- The user signs out on a shared or lost device → all cached workspace data is discarded.
+- Connectivity is lost mid-edit → the same refusal applies; the user's typed input
+  remains on screen so nothing has to be retyped once the connection returns.
 
 ## Requirements *(mandatory)*
 
@@ -342,8 +390,11 @@ is present. Then delete the account and verify no data remains reachable in any 
   account has a name and an optional note. It has no balance and no bank identifier.
 - **FR-008**: Users MUST be able to create, rename, reorder and delete categories. A
   category has a name and belongs to either income or expense.
-- **FR-009**: System MUST prevent deletion of a category or account that is still
-  referenced, or MUST require the user to reassign the references first.
+- **FR-009**: System MUST refuse deletion of a category or account that is still
+  referenced by any commitment, and MUST tell the user how many commitments reference
+  it. Reassignment flows are not provided; the user edits the commitments first.
+- **FR-009a**: System MUST allow a category or account to be renamed at any time,
+  including while referenced, without affecting the commitments that reference it.
 
 **Commitments**
 
@@ -384,13 +435,27 @@ is present. Then delete the account and verify no data remains reachable in any 
 
 - **FR-025**: System MUST project commitments across a rolling horizon of 24 months, and
   MUST allow the user to navigate freely to any month within it.
-- **FR-026**: System MUST include a commitment in a month only if that month falls on or
-  after its start date and on or before its contract end date, where present.
+- **FR-026**: System MUST include a commitment in a month if that month contains or
+  follows the month of its start date, and contains or precedes the month of its
+  contract end date where one is present. Comparison is at whole-month granularity: a
+  date anywhere within a month makes that entire month count at both ends.
+- **FR-026a**: System MUST NOT prorate any amount by day count. A commitment active for
+  part of a month contributes its full amount for that month.
+- **FR-026b**: System MUST apply the same whole-month rule to the effective date of an
+  amount: an amount effective from any day in a month is in force from that whole month
+  onward.
 - **FR-027**: System MUST offer two presentations of the same data: a smoothed view, in
   which a non-monthly charge is divided evenly across the months of its period, and a
   cash view, in which the full charge appears only in the months it is actually due.
 - **FR-028**: System MUST ensure that smoothed amounts across one complete rhythm period
   sum exactly to the charge amount, with no minor unit lost or created.
+- **FR-028a**: System MUST smooth a charge across every month of its rhythm period, then
+  display only those months in which the commitment is active. A period that is cut
+  short by a start or end date MUST NOT be re-smoothed across the remaining months, and
+  MUST NOT be suppressed.
+- **FR-028b**: System MUST NOT claim that the smoothed and cash views produce equal
+  totals over an arbitrary range. They are equal only over ranges in which every rhythm
+  period is fully covered by the commitment's active months.
 - **FR-029**: System MUST determine due months from the anchor month and the rhythm, and
   MUST NOT place a due month before the start date.
 - **FR-030**: System MUST retain the user's chosen presentation across month navigation
@@ -409,6 +474,20 @@ is present. Then delete the account and verify no data remains reachable in any 
 - **FR-035**: System MUST present the dashboard legibly on a small screen without
   horizontal scrolling.
 
+**Offline behaviour**
+
+- **FR-035a**: System MUST be installable on a phone and MUST launch without a network
+  connection.
+- **FR-035b**: System MUST keep previously viewed months readable while offline, and MUST
+  mark them as possibly out of date, stating when they were last retrieved.
+- **FR-035c**: System MUST refuse any create, edit or delete while offline, and MUST
+  explain that a connection is required. It MUST NOT queue the change, retry it silently,
+  or appear to have saved it.
+- **FR-035d**: System MUST NOT present a month that has never been retrieved as empty
+  while offline; it MUST distinguish "no data" from "not available offline".
+- **FR-035e**: System MUST discard all cached workspace data on sign-out and on account
+  deletion, leaving no financial data readable on the device afterwards.
+
 **Transfers**
 
 - **FR-036**: System MUST display, for a selected month, each transfer destination
@@ -416,8 +495,14 @@ is present. Then delete the account and verify no data remains reachable in any 
 - **FR-037**: System MUST apply the share percentage when computing transfer amounts.
 - **FR-038**: System MUST exclude commitments without a transfer destination from the
   transfer view.
-- **FR-039**: System MUST round transfer totals once, at a defined point, and MUST
-  document where that rounding occurs.
+- **FR-039**: System MUST round each commitment's share to whole minor units at the point
+  the share is applied, and MUST compute the destination total as the sum of those
+  already-rounded amounts. It MUST NOT carry fractional minor units into the total.
+- **FR-039a**: System MUST use half-up rounding, and MUST apply it identically wherever a
+  share is computed, so that the same commitment always yields the same amount.
+- **FR-039b**: System MUST ensure the displayed total for a destination account equals
+  the sum of the displayed lines contributing to it, exactly, with no reconciling
+  difference.
 
 **Data rights**
 
@@ -462,12 +547,15 @@ is present. Then delete the account and verify no data remains reachable in any 
 - **SC-001**: The user reproduces their current spreadsheet in the system, and for every
   one of the 13 categories in a chosen month, the category total matches the spreadsheet
   to the cent.
-- **SC-002**: Smoothed amounts for every non-monthly commitment sum, across a full rhythm
-  period, to exactly the charge amount, verified for at least one thousand generated
-  amount and period combinations.
+- **SC-002**: Smoothed amounts for every non-monthly commitment sum, across a rhythm
+  period fully covered by the commitment's active months, to exactly the charge amount,
+  verified for at least one thousand generated amount and period combinations. For
+  periods only partially covered, the smoothed total equals the per-month share times
+  the number of active months in that period.
 - **SC-003**: The transfer list for a chosen month matches the amounts the user currently
   transfers by hand, to the cent, for every destination that does not depend on a second
-  person's share.
+  person's share and whose current figure is not deliberately rounded up to whole euros
+  by the user's existing practice.
 - **SC-004**: A person with data in one workspace can reach zero records belonging to
   another workspace, demonstrated by an automated test covering every workspace-scoped
   entity.
@@ -480,7 +568,10 @@ is present. Then delete the account and verify no data remains reachable in any 
 - **SC-008**: An export contains every field of every record the workspace holds,
   verified by comparing a populated workspace against its export, field by field.
 - **SC-009**: After account deletion, zero records associated with that user remain
-  reachable in any store.
+  reachable in any store, including any cache held on the device.
+- **SC-011**: With the device offline, a previously viewed month renders within 2 seconds
+  and is visibly marked as possibly out of date; a month never viewed shows an explicit
+  offline state rather than zeroes.
 - **SC-010**: The user completes one full month of planning without opening the
   spreadsheet.
 
@@ -497,10 +588,15 @@ is present. Then delete the account and verify no data remains reachable in any 
   rate handling or multi-currency display exists in this release.
 - Accounts are labels. The system holds no balances, no IBANs and no connection to any
   bank, and therefore stores no bank identifiers requiring special protection.
+- Planning granularity is the whole month. Dates are captured with day precision so that
+  a cancellation notice deadline remains meaningful, but every projection comparison is
+  made at month level and no amount is ever prorated.
 - The 24-month horizon is rolling relative to the current month. Months outside it are
   not reachable.
 - Loan schedules are entered as values by the user. The system does not compute interest
   or amortisation schedules from a rate and principal.
+- Offline support is read-only. There is no synchronisation, no local write queue and no
+  conflict resolution in this release, and therefore no possibility of divergent copies.
 - The primary interaction is reading the dashboard on a phone. Editing is less frequent
   and may use a plainer, more form-like presentation.
 - Visual presentation is built on the organisation's published design system, consumed as
@@ -521,5 +617,8 @@ specification:
 - Interest and loan schedule calculation.
 - Notifications and reminders, including for cancellation deadlines. The deadline is
   displayed; nothing is sent.
+- Offline editing, background synchronisation and conflict resolution.
+- Rounding a transfer up to the next whole euro as a deliberate buffer, which the user's
+  spreadsheet currently does for one shared account.
 - The user's other spreadsheet tabs: holiday planning, purchase wish list, pocket money,
   pension projection, and the monthly income-and-expenditure sheet.
