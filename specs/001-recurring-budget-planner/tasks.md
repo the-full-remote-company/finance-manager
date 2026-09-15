@@ -100,17 +100,17 @@ error contract. Nothing in any user story can be built before these hold.
 
 ### Transport and error contract in `packages/api`
 
-- [ ] T037 Initialise tRPC 11 in `packages/api`: root router, `publicProcedure`, and `superjson` explicitly **not** used on the OpenAPI-exposed path, since money crosses the wire as a decimal string ([contracts/README.md](./contracts/README.md))
+- [x] T037 Initialise tRPC 11 in `packages/api`: root router, `publicProcedure`, and `superjson` explicitly **not** used on the OpenAPI-exposed path, since money crosses the wire as a decimal string ([contracts/README.md](./contracts/README.md))
 - [x] T038 Write `packages/api/src/schemas/primitives.ts`: the Zod schemas for the wire conventions — `Money` as `{ minor: z.string().regex(/^\d+$/), currency }` parsed to `bigint` at the boundary, `Month` as `/^\d{4}-(0[1-9]|1[0-2])$/`, `Date` as `YYYY-MM-DD`, `Percentage` as an exact rational or `null`. Validated types, never raw request objects, cross into `packages/core`
 - [x] T039 *(test first)* `packages/api/tests/errors.test.ts`: every code in [contracts/errors.md](./contracts/errors.md) maps to its stated transport code and `data.appCode`; `details` never carries a monetary amount, an account identifier or personal data; and a cross-workspace `NOT_FOUND` response is **byte-identical** to a genuinely-absent `NOT_FOUND`, including `message` and field order (FR-003, Article I)
 - [x] T040 Implement `packages/api/src/errors.ts` to satisfy T039: machine token in `message`, `appCode` in `data`, no server-authored human sentence anywhere
-- [ ] T041 Implement `packages/api/src/middleware/workspace.ts`: `protectedProcedure` resolves the session, then runs the whole resolver inside `withWorkspace`. Application-layer scoping in addition to RLS, never instead (Article I)
-- [ ] T042 [P] Implement `packages/api/src/middleware/rate-limit.ts` backed by `auth_attempts`, applied to every mutation and to `auth.*`, returning `RATE_LIMITED` with `retryAfterSeconds` ("Baseline security controls", FR-005)
-- [ ] T043 [P] Implement `packages/api/src/routers/health.ts` — `health.ping` returning `{ ok: true, time }`, unauthenticated, and explicitly excluded from service-worker caching in T098
-- [ ] T044 [P] Add the ESLint rule requiring `.meta({ openapi: ... })` on every public procedure, so an unannotated procedure fails `pnpm lint` rather than silently vanishing from the document ([ADR 0005](../../decisions/0005-openapi-generation.md))
-- [ ] T045 Wire `trpc-to-openapi` generation into the build, emit `packages/api/openapi/openapi.json` as a committed artifact, and add `pnpm openapi:check` which regenerates and diffs it (Article VI: never hand-maintained)
-- [ ] T046 *(test first)* `packages/api/tests/openapi-coverage.test.ts`: the generated document covers every procedure in the router, and the REST handler is exercised without batching
-- [ ] T047 Mount the handlers in `apps/web/app/api/trpc/[trpc]/route.ts` and the REST/OpenAPI handler alongside it
+- [x] T041 Implement `packages/api/src/middleware/workspace.ts`: `protectedProcedure` resolves the session, then runs the whole resolver inside `withWorkspace`. Application-layer scoping in addition to RLS, never instead (Article I)
+- [x] T042 [P] Implement `packages/api/src/middleware/rate-limit.ts` backed by `auth_attempts`, applied to every mutation and to `auth.*`, returning `RATE_LIMITED` with `retryAfterSeconds` ("Baseline security controls", FR-005)
+- [x] T043 [P] Implement `packages/api/src/routers/health.ts` — `health.ping` returning `{ ok: true, time }`, unauthenticated, and explicitly excluded from service-worker caching in T098
+- [x] T044 [P] Add the ESLint rule requiring `.meta({ openapi: ... })` on every public procedure, so an unannotated procedure fails `pnpm lint` rather than silently vanishing from the document ([ADR 0005](../../decisions/0005-openapi-generation.md))
+- [x] T045 Wire `trpc-to-openapi` generation into the build, emit `packages/api/openapi/openapi.json` as a committed artifact, and add `pnpm openapi:check` which regenerates and diffs it (Article VI: never hand-maintained)
+- [x] T046 *(test first)* `packages/api/tests/openapi-coverage.test.ts`: the generated document covers every procedure in the router, and the REST handler is exercised without batching
+- [x] T047 Mount the handlers in `apps/web/app/api/trpc/[trpc]/route.ts` and the REST/OpenAPI handler alongside it
 
 ### Web shell, locale, design system
 

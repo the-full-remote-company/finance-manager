@@ -134,6 +134,53 @@ describe("row level security coverage", () => {
     expect(privileges?.select).toBe(true);
   });
 
+  it("has exactly one SECURITY DEFINER function, the session bootstrap", async () => {
+    // ADR 0007 permits one narrow escape from RLS, so that authentication can
+    // resolve a token to a workspace before any workspace is in scope. It must
+    // stay exactly one: a second such function is a second hole, and would
+    // otherwise appear without anyone noticing.
+    const db = ownerDatabase();
+    const result = await db.execute<{ proname: string }>(
+      sql`select p.proname
+          from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'public' and p.prosecdef
+          order by p.proname`,
+    );
+
+    expect(result.rows.map((row) => row.proname)).toEqual(["app_resolve_session"]);
+  });
+
+  it("pins the search_path of the SECURITY DEFINER function", async () => {
+    // An unpinned search_path is the standard way a SECURITY DEFINER function
+    // is hijacked: the caller creates a schema shadowing a referenced object.
+    const db = ownerDatabase();
+    const result = await db.execute<{ proconfig: string[] | null }>(
+      sql`select p.proconfig
+          from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'public' and p.proname = 'app_resolve_session'`,
+    );
+
+    expect(result.rows[0]?.proconfig?.join(",")).toMatch(/search_path=/);
+  });
+
+  it("does not expose the session token hash through the bootstrap function", async () => {
+    // The function returns identifiers and lifetimes only. Returning the hash
+    // would hand a leaked query result everything needed to impersonate.
+    const db = ownerDatabase();
+    const result = await db.execute<{ column_name: string }>(
+      sql`select unnest(p.proargnames) as column_name
+          from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'public' and p.proname = 'app_resolve_session'`,
+    );
+
+    const names = result.rows.map((row) => row.column_name);
+    expect(names).not.toContain("token_hash");
+    expect(names).not.toContain("password_hash");
+  });
+
   it("does not let the application role own or create tables", async () => {
     const db = ownerDatabase();
     const owned = await db.execute<{ count: string }>(

@@ -1,4 +1,14 @@
-// Public entry point. Populated by the tasks in
-// specs/001-recurring-budget-planner/tasks.md; empty until then so the type
-// check gate is live from the first commit rather than from the first module.
-export {};
+// Public entry point for @finance/api.
+export { appRouter, type AppRouter } from "./router.js";
+export { createContext } from "./create-context.js";
+export type { AuthenticatedContext, Context } from "./context.js";
+export {
+  APP_ERROR_TRANSPORT,
+  appError,
+  notFound,
+  toTrpcError,
+  type AppError,
+  type AppErrorCode,
+  type AppErrorDetails,
+} from "./errors.js";
+export { protectedProcedure, publicProcedure, router } from "./trpc.js";

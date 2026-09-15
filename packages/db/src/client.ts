@@ -10,6 +10,9 @@ import * as schema from "./schema/index.js";
  */
 export type Database = NodePgDatabase<typeof schema>;
 
+/** Re-exported so consumers need not depend on `pg` directly. */
+export type Pool = pg.Pool;
+
 export interface PoolOptions {
   readonly connectionString?: string;
   readonly max?: number;

@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import financeRules from "./eslint-rules/require-openapi-meta.js";
 
 /**
  * Root ESLint configuration.
@@ -124,6 +125,14 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": ["error", ...COLOUR_SELECTORS, ...LOCALE_SELECTORS],
     },
+  },
+  {
+    // Article VI / ADR 0005: a procedure without .meta({ openapi }) is absent
+    // from the generated document. Caught here at authoring time, and again by
+    // openapi-coverage.test.ts at build time.
+    files: ["packages/api/src/**/*.ts"],
+    plugins: { finance: financeRules },
+    rules: { "finance/require-openapi-meta": "error" },
   },
   {
     files: ["**/tests/**/*.ts", "**/tests/**/*.tsx", "**/*.test.ts", "**/*.test.tsx"],

@@ -6,5 +6,11 @@
 // owns it, and swapping it later is one package's problem.
 export { sql } from "drizzle-orm";
 export * as schema from "./schema/index.js";
-export { createDatabase, createPool, type Database, type PoolOptions } from "./client.js";
+export {
+  createDatabase,
+  createPool,
+  type Database,
+  type Pool,
+  type PoolOptions,
+} from "./client.js";
 export { currentWorkspaceId, withWorkspace } from "./rls.js";
