@@ -75,16 +75,16 @@ error contract. Nothing in any user story can be built before these hold.
 
 ### Domain primitives in `packages/core` — strict TDD
 
-- [ ] T018 [P] *(test first)* `packages/core/tests/money/money.test.ts`: `Money` is `{ minor: bigint, currency: string }`; construction rejects a negative minor unit (FR-020), rejects a non-ISO-4217 currency, and rejects a JavaScript `number` input; addition and summation refuse to mix currencies
-- [ ] T019 [P] Implement `packages/core/src/money/money.ts` to satisfy T018. No floating-point value appears in any signature or intermediate (Article II)
-- [ ] T020 [P] *(test first)* `packages/core/tests/money/allocate.test.ts`: `allocate(10_000n, 3) === [3_334n, 3_333n, 3_333n]`; earliest-part-first is the documented tie-break; plus a property test over ≥1 000 generated `(total, parts)` pairs asserting `sum(allocate(t, n)) === t` and `max - min <= 1` (Article II, SC-002)
-- [ ] T021 [P] Implement `packages/core/src/money/allocate.ts` with integer `base` and `remainder` only — no running fractional remainder, which Article II rejects outright
-- [ ] T022 [P] *(test first)* `packages/core/tests/money/apply-share.test.ts`: `applyShare(4_001n, 50) === 2_001n` (half-up, the spec's worked example); `applyShare(x, 0) === 0n`; `applyShare(x, 100) === x`; the same input always yields the same output (FR-039a); no intermediate float
-- [ ] T023 [P] Implement `packages/core/src/money/apply-share.ts` as `floor((amount * pct * 2 + 100) / 200)` in `bigint`. This is the only place in the repository where a share is rounded (FR-039)
-- [ ] T024 [P] *(test first)* `packages/core/tests/time/year-month.test.ts`: `YearMonth` index `year * 12 + (month - 1)`; round-trip with the `"YYYY-MM"` wire format; `monthOf(date)` reduces a day-precise date to its month; comparison and addition across a year boundary; rejection of month 0 and month 13
-- [ ] T025 [P] Implement `packages/core/src/time/year-month.ts` to satisfy T024
-- [ ] T026 [P] *(test first)* `packages/core/tests/money/percentage.test.ts`: a category total over income returns an exact rational `{ numerator, denominator }`, and returns `null` — not `0`, not a throw — when income is zero (FR-033)
-- [ ] T027 [P] Implement `packages/core/src/money/percentage.ts`. The domain never rounds a percentage; `Intl.NumberFormat` in the client performs the only display rounding (Article II)
+- [x] T018 [P] *(test first)* `packages/core/tests/money/money.test.ts`: `Money` is `{ minor: bigint, currency: string }`; construction rejects a non-ISO-4217 currency and a JavaScript `number` input; addition, subtraction and summation refuse to mix currencies. **`Money` is signed**: FR-020's rejection of negative amounts is enforced by a separate `assertChargeAmount` guard at the trust boundary, not by the type, because `dashboard.month.remaining` is `income - combined` and the contract states it may be negative — "the one signed figure in the payload". A non-negative `Money` type would make that payload unrepresentable
+- [x] T019 [P] Implement `packages/core/src/money/money.ts` to satisfy T018, including `assertChargeAmount` for FR-020. No floating-point value appears in any signature or intermediate (Article II)
+- [x] T020 [P] *(test first)* `packages/core/tests/money/allocate.test.ts`: `allocate(10_000n, 3) === [3_334n, 3_333n, 3_333n]`; earliest-part-first is the documented tie-break; plus a property test over ≥1 000 generated `(total, parts)` pairs asserting `sum(allocate(t, n)) === t` and `max - min <= 1` (Article II, SC-002)
+- [x] T021 [P] Implement `packages/core/src/money/allocate.ts` with integer `base` and `remainder` only — no running fractional remainder, which Article II rejects outright
+- [x] T022 [P] *(test first)* `packages/core/tests/money/apply-share.test.ts`: `applyShare(4_001n, 50) === 2_001n` (half-up, the spec's worked example); `applyShare(x, 0) === 0n`; `applyShare(x, 100) === x`; the same input always yields the same output (FR-039a); no intermediate float
+- [x] T023 [P] Implement `packages/core/src/money/apply-share.ts` as `floor((amount * pct * 2 + 100) / 200)` in `bigint`. This is the only place in the repository where a share is rounded (FR-039)
+- [x] T024 [P] *(test first)* `packages/core/tests/time/year-month.test.ts`: `YearMonth` index `year * 12 + (month - 1)`; round-trip with the `"YYYY-MM"` wire format; `monthOf(date)` reduces a day-precise date to its month; comparison and addition across a year boundary; rejection of month 0 and month 13
+- [x] T025 [P] Implement `packages/core/src/time/year-month.ts` to satisfy T024
+- [x] T026 [P] *(test first)* `packages/core/tests/money/percentage.test.ts`: a category total over income returns an exact rational `{ numerator, denominator }`, and returns `null` — not `0`, not a throw — when income is zero (FR-033)
+- [x] T027 [P] Implement `packages/core/src/money/percentage.ts`. The domain never rounds a percentage; `Intl.NumberFormat` in the client performs the only display rounding (Article II)
 
 ### Schema and tenancy in `packages/db` — strict TDD, Article III
 
@@ -402,7 +402,7 @@ any store.
 - [ ] T150 [P] Handle a very long commitment or category name on a narrow screen: truncated with the full value still reachable, never overlapping a figure (edge case)
 - [ ] T151 [P] Record the keyboard-only traversal and screen-reader pass for each new interactive pattern — month navigator, presentation toggle, commitment form, override editor, delete confirmation — in the pull request, as Article IV requires. Automated scans catch a minority of violations
 - [ ] T152 [P] Add the Playwright performance assertions for SC-006 (2 s first dashboard render, 1 s month switch on a mid-range mobile profile) and SC-011 (2 s offline render)
-- [ ] T153 [P] Verify the coverage floors are met rather than merely configured: 90% lines and branches in `packages/core`, 70% repo-wide. A test that asserts nothing meaningful is a defect regardless of its effect on the number (Article III)
+- [ ] T153 [P] Verify the coverage floors are met rather than merely configured: 90% lines and branches in `packages/core`, 70% repo-wide. A test that asserts nothing meaningful is a defect regardless of its effect on the number (Article III). **Includes re-adding `apps/web` to `coverage.include`**, removed during Phase 2 because the V8 provider emits `PARSE_ERROR` on JSX and type-only imports in never-executed files and drops them from the calculation silently — the floor must not claim to cover files it cannot parse, so `apps/web` rejoins it together with the component test setup that gives it a transform
 - [ ] T154 [P] Add dependency vulnerability scanning and automated update pull requests ("Baseline security controls")
 - [ ] T155 [P] Assert no `any` and no non-null assertion on any security path — session handling, workspace scoping, password verification ("Baseline security controls")
 - [ ] T156 [P] Audit application logs and error payloads for a monetary amount, an account identifier, an email address or any personal data, and add a test asserting their absence (Article VIII)

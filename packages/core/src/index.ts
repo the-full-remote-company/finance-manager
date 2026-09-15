@@ -1,4 +1,8 @@
-// Public entry point. Populated by the tasks in
-// specs/001-recurring-budget-planner/tasks.md; empty until then so the type
-// check gate is live from the first commit rather than from the first module.
-export {};
+// Public entry point for @finance/core.
+//
+// Article VI: this package receives plain data and returns plain data. It
+// imports nothing in this repository and nothing touching React, Next.js,
+// tRPC, the ORM, HTTP or a database client — enforced by dependency-cruiser,
+// not by convention.
+export * from "./money/index.js";
+export * from "./time/index.js";

@@ -19,12 +19,6 @@ export default defineConfig({
           name: "core",
           include: ["packages/core/tests/**/*.test.ts"],
           environment: "node",
-          coverage: {
-            enabled: true,
-            provider: "v8",
-            include: ["packages/core/src/**/*.ts"],
-            thresholds: { lines: 90, branches: 90, functions: 90, statements: 90 },
-          },
         },
       },
       {
@@ -70,9 +64,34 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov"],
-      include: ["packages/*/src/**/*.{ts,tsx}", "apps/web/{app,lib,components}/**/*.{ts,tsx}"],
+      // apps/web is deliberately absent for now. The V8 provider parses
+      // never-executed files to report them as 0%, and it cannot parse JSX or
+      // type-only imports without a transform configured for them — it emitted
+      // PARSE_ERROR for layout.tsx and page.tsx and dropped them from the
+      // calculation silently. A floor measured against a file set that quietly
+      // loses members is not a floor.
+      //
+      // apps/web joins this list in T153, together with the component test
+      // setup that gives it a transform. Until then the repo-wide floor is
+      // honest about what it covers rather than approximately wrong.
+      include: ["packages/*/src/**/*.{ts,tsx}"],
       exclude: ["**/*.d.ts", "**/index.ts"],
-      thresholds: { lines: 70 },
+      thresholds: {
+        // Article III, repo-wide floor.
+        lines: 70,
+        // Article III, packages/core floor. Expressed as a glob threshold
+        // because Vitest applies coverage globally, not per project: a
+        // `coverage` block inside a project entry is silently ignored, which
+        // meant the 90% floor was configured but never enforced. Found by
+        // reading the report, which listed apps/web files under the "core"
+        // project run.
+        "packages/core/src/**/*.ts": {
+          lines: 90,
+          branches: 90,
+          functions: 90,
+          statements: 90,
+        },
+      },
     },
   },
 });
