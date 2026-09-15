@@ -1,0 +1,19 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 12 reads settings here rather than from package.json.
+#
+# Install scripts run only for the packages listed below. Anything else is a
+# supply-chain decision that has to be made deliberately, which is the same
+# reason "Baseline security controls" requires dependency vulnerability
+# scanning rather than trust.
+#
+# @node-rs/argon2 is listed ahead of its first use (T054): it ships a prebuilt
+# native binding and will need this the moment password hashing lands.
+allowBuilds:
+  "@parcel/watcher": true
+  "@swc/core": true
+  "@node-rs/argon2": true
+  esbuild: true
+  sharp: true

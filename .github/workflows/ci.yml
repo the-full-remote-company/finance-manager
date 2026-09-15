@@ -1,0 +1,208 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# "Quality gates": every pull request MUST pass, with no gate skippable.
+# No job here carries continue-on-error, and none may be added: Article IX
+# forbids disabling a gate to make a build pass.
+env:
+  DATABASE_URL_OWNER: postgres://owner:owner@localhost:5432/finance
+  DATABASE_URL: postgres://app:app@localhost:5432/finance
+  SESSION_COOKIE_NAME: __Host-session
+
+jobs:
+  static:
+    name: Type check, lint, format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format
+
+  unit:
+    name: Unit tests and coverage floors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Article III: 90% lines and branches in packages/core, 70% repo-wide.
+      # The thresholds live in vitest.config.ts so the run fails, not a review.
+      - run: pnpm test:unit
+
+  database:
+    name: Integration and cross-tenant isolation
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: owner
+          POSTGRES_PASSWORD: owner
+          POSTGRES_DB: finance
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U owner -d finance"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create the non-owner application role
+        run: psql "$DATABASE_URL_OWNER" -f packages/db/scripts/init-roles.sql
+      - run: pnpm db:migrate
+      # Article I: a new tenant-scoped table without its leak test is an
+      # incomplete change and MUST NOT merge. This is that gate.
+      - run: pnpm test:isolation
+      - run: pnpm test:integration
+
+  design-system:
+    name: Design system contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Article V requires `npx tfrc-verify`. That package is not published
+      # (verified 2026-09-15; see PROMOTE.md). The step below runs it the
+      # moment it exists and otherwise runs our equivalent checks — exact
+      # pins, no marketing dialect, nothing vendored, classes present.
+      - name: tfrc-verify, if it exists
+        run: |
+          if npm view tfrc-verify version >/dev/null 2>&1; then
+            npx --yes tfrc-verify
+          else
+            echo "tfrc-verify is not published; running scripts/verify-design-system.mjs instead (see PROMOTE.md)."
+          fi
+      - run: pnpm verify:design-system
+
+  contract:
+    name: OpenAPI document is generated, not hand-maintained
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Article VI: the document MUST NOT be hand-maintained. Regenerate and
+      # diff, so staleness is a build failure.
+      - run: pnpm openapi:check
+
+  e2e:
+    name: End-to-end and accessibility
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: owner
+          POSTGRES_PASSWORD: owner
+          POSTGRES_DB: finance
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U owner -d finance"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: psql "$DATABASE_URL_OWNER" -f packages/db/scripts/init-roles.sql
+      - run: pnpm db:migrate
+      - run: pnpm exec playwright install --with-deps chromium
+      # Article IV: the accessibility scan runs inside the end-to-end run, and
+      # a serious or critical violation fails the build.
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+  self-hosted-build:
+    name: Self-hosted build boots against the container database
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: owner
+          POSTGRES_PASSWORD: owner
+          POSTGRES_DB: finance
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U owner -d finance"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: psql "$DATABASE_URL_OWNER" -f packages/db/scripts/init-roles.sql
+      - run: pnpm db:migrate
+      - run: pnpm build
+      # Article VII: "The application MUST build and run in a self-hosted
+      # configuration, and CI MUST prove it." A build that does not boot proves
+      # nothing, so the server is started and polled.
+      - name: Boot and poll the health endpoint
+        run: |
+          pnpm --filter @finance/web start &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/api/trpc/health.ping >/dev/null; then
+              echo "booted"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "the self-hosted build did not answer within 120s"
+          exit 1
+
+  audit:
+    name: Dependency vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level moderate

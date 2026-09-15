@@ -1,0 +1,13 @@
+{
+  "app": {
+    "name": "Finanzplaner",
+    "skipToContent": "Zum Inhalt springen"
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "rename": "Umbenennen",
+    "loading": "Wird geladen …"
+  }
+}
