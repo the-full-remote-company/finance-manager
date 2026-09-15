@@ -101,9 +101,9 @@ error contract. Nothing in any user story can be built before these hold.
 ### Transport and error contract in `packages/api`
 
 - [ ] T037 Initialise tRPC 11 in `packages/api`: root router, `publicProcedure`, and `superjson` explicitly **not** used on the OpenAPI-exposed path, since money crosses the wire as a decimal string ([contracts/README.md](./contracts/README.md))
-- [ ] T038 Write `packages/api/src/schemas/primitives.ts`: the Zod schemas for the wire conventions — `Money` as `{ minor: z.string().regex(/^\d+$/), currency }` parsed to `bigint` at the boundary, `Month` as `/^\d{4}-(0[1-9]|1[0-2])$/`, `Date` as `YYYY-MM-DD`, `Percentage` as an exact rational or `null`. Validated types, never raw request objects, cross into `packages/core`
-- [ ] T039 *(test first)* `packages/api/tests/errors.test.ts`: every code in [contracts/errors.md](./contracts/errors.md) maps to its stated transport code and `data.appCode`; `details` never carries a monetary amount, an account identifier or personal data; and a cross-workspace `NOT_FOUND` response is **byte-identical** to a genuinely-absent `NOT_FOUND`, including `message` and field order (FR-003, Article I)
-- [ ] T040 Implement `packages/api/src/errors.ts` to satisfy T039: machine token in `message`, `appCode` in `data`, no server-authored human sentence anywhere
+- [x] T038 Write `packages/api/src/schemas/primitives.ts`: the Zod schemas for the wire conventions — `Money` as `{ minor: z.string().regex(/^\d+$/), currency }` parsed to `bigint` at the boundary, `Month` as `/^\d{4}-(0[1-9]|1[0-2])$/`, `Date` as `YYYY-MM-DD`, `Percentage` as an exact rational or `null`. Validated types, never raw request objects, cross into `packages/core`
+- [x] T039 *(test first)* `packages/api/tests/errors.test.ts`: every code in [contracts/errors.md](./contracts/errors.md) maps to its stated transport code and `data.appCode`; `details` never carries a monetary amount, an account identifier or personal data; and a cross-workspace `NOT_FOUND` response is **byte-identical** to a genuinely-absent `NOT_FOUND`, including `message` and field order (FR-003, Article I)
+- [x] T040 Implement `packages/api/src/errors.ts` to satisfy T039: machine token in `message`, `appCode` in `data`, no server-authored human sentence anywhere
 - [ ] T041 Implement `packages/api/src/middleware/workspace.ts`: `protectedProcedure` resolves the session, then runs the whole resolver inside `withWorkspace`. Application-layer scoping in addition to RLS, never instead (Article I)
 - [ ] T042 [P] Implement `packages/api/src/middleware/rate-limit.ts` backed by `auth_attempts`, applied to every mutation and to `auth.*`, returning `RATE_LIMITED` with `retryAfterSeconds` ("Baseline security controls", FR-005)
 - [ ] T043 [P] Implement `packages/api/src/routers/health.ts` — `health.ping` returning `{ ok: true, time }`, unauthenticated, and explicitly excluded from service-worker caching in T098
@@ -122,12 +122,12 @@ error contract. Nothing in any user story can be built before these hold.
 
 ### Auth foundation in `packages/auth` — strict TDD, Article III
 
-- [ ] T053 [P] *(test first)* `packages/auth/tests/password.test.ts`: argon2id with `memoryCost = 19456`, `timeCost = 2`, `parallelism = 1` ([ADR 0003](../../decisions/0003-hand-rolled-sessions.md)); verification of a correct password succeeds, a wrong one fails, and the hash is never logged
-- [ ] T054 [P] Implement `packages/auth/src/password.ts` with `@node-rs/argon2` to satisfy T053
-- [ ] T055 [P] *(test first)* `packages/auth/tests/session.test.ts`: a 128-bit random opaque token, SHA-256 hashed at rest so the raw token never reaches the database; issue, verify, revoke; an expired or revoked token verifies as absent
-- [ ] T056 [P] Implement `packages/auth/src/session.ts` and the `__Host-session` cookie with `httpOnly`, `Secure`, `SameSite=Lax` ("Baseline security controls")
-- [ ] T057 [P] *(test first)* `packages/auth/tests/audit.test.ts`: each of `sign_in_succeeded`, `sign_in_failed`, `signed_out`, `export_performed`, `account_deleted` writes the stated `detail` shape, and no event carries an email address, an account name or a monetary amount (Article VIII)
-- [ ] T058 [P] Implement `packages/auth/src/audit.ts` as append-only writes to `audit_events`
+- [x] T053 [P] *(test first)* `packages/auth/tests/password.test.ts`: argon2id with `memoryCost = 19456`, `timeCost = 2`, `parallelism = 1` ([ADR 0003](../../decisions/0003-hand-rolled-sessions.md)); verification of a correct password succeeds, a wrong one fails, and the hash is never logged
+- [x] T054 [P] Implement `packages/auth/src/password.ts` with `@node-rs/argon2` to satisfy T053
+- [x] T055 [P] *(test first)* `packages/auth/tests/session.test.ts`: a 128-bit random opaque token, SHA-256 hashed at rest so the raw token never reaches the database; issue, verify, revoke; an expired or revoked token verifies as absent
+- [x] T056 [P] Implement `packages/auth/src/session.ts` and the `__Host-session` cookie with `httpOnly`, `Secure`, `SameSite=Lax` ("Baseline security controls")
+- [x] T057 [P] *(test first)* `packages/auth/tests/audit.test.ts`: each of `sign_in_succeeded`, `sign_in_failed`, `signed_out`, `export_performed`, `account_deleted` writes the stated `detail` shape, and no event carries an email address, an account name or a monetary amount (Article VIII)
+- [x] T058 [P] Implement `packages/auth/src/audit.ts` as append-only writes to `audit_events`
 
 **Checkpoint**: Foundation ready. The domain arithmetic is proven, tenancy is enforced and tested, the transport and error contract exist, and user story work can begin.
 

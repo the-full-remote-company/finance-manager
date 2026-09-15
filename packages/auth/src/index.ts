@@ -1,4 +1,19 @@
-// Public entry point. Populated by the tasks in
-// specs/001-recurring-budget-planner/tasks.md; empty until then so the type
-// check gate is live from the first commit rather than from the first module.
-export {};
+// Public entry point for @finance/auth.
+export { ARGON2ID_PARAMETERS, hashPassword, verifyPassword } from "./password.js";
+export {
+  SESSION_TOKEN_BYTES,
+  hashSessionToken,
+  isExpired,
+  issueSessionToken,
+  tokenHashEquals,
+  type IssuedSessionToken,
+  type SessionLifetime,
+} from "./session.js";
+export {
+  AUDIT_DETAIL_KEYS,
+  hashIp,
+  recordAuditEvent,
+  type AuditDetail,
+  type AuditEventInput,
+  type AuditEventType,
+} from "./audit.js";
