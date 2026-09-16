@@ -9,5 +9,32 @@
     "delete": "Löschen",
     "rename": "Umbenennen",
     "loading": "Wird geladen …"
+  },
+  "auth": {
+    "register": {
+      "title": "Konto erstellen",
+      "displayNameLabel": "Anzeigename",
+      "emailLabel": "E-Mail-Adresse",
+      "passwordLabel": "Passwort",
+      "passwordHint": "Mindestens 12 Zeichen.",
+      "submit": "Konto erstellen",
+      "submitting": "Konto wird erstellt …",
+      "switchToSignIn": "Bereits registriert? Anmelden.",
+      "success": "Fast geschafft: Bitte E-Mails prüfen, um die Registrierung abzuschließen."
+    },
+    "signIn": {
+      "title": "Anmelden",
+      "emailLabel": "E-Mail-Adresse",
+      "passwordLabel": "Passwort",
+      "submit": "Anmelden",
+      "submitting": "Anmeldung läuft …",
+      "switchToRegister": "Noch kein Konto? Registrieren."
+    },
+    "errors": {
+      "validationFailed": "Bitte die markierten Felder prüfen.",
+      "authFailed": "Anmeldung fehlgeschlagen. E-Mail-Adresse oder Passwort ist falsch.",
+      "rateLimited": "Zu viele Versuche. Bitte in {seconds} Sekunden erneut versuchen.",
+      "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    }
   }
 }

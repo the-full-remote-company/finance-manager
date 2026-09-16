@@ -8,6 +8,10 @@ build/
 .next/
 out/
 *.tsbuildinfo
+# Regenerated on every `next dev`/`next build`; its own content imports
+# generated type files under `.next/`, which is itself ignored above, so a
+# committed copy would import a path nobody but the last builder's machine has.
+next-env.d.ts
 
 # Test / coverage output
 coverage/

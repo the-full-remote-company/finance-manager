@@ -144,19 +144,19 @@ any route, including by direct identifier.
 
 ### Tests for User Story 1 (write first, observe failing)
 
-- [ ] T059 [P] [US1] `packages/api/tests/auth/register.test.ts`: registration creates exactly one workspace with the registrant as its only member (FR-001); a duplicate email is rejected without disclosing that the account exists
-- [ ] T060 [P] [US1] `packages/api/tests/auth/sign-in.test.ts`: correct credentials issue a session; wrong password and unknown user return an identical generic `AUTH_FAILED` with no timing branch that distinguishes them
-- [ ] T061 [P] [US1] `packages/api/tests/auth/throttle.test.ts`: repeated failed attempts cross the threshold and return `RATE_LIMITED` with `retryAfterSeconds` (FR-005, Story 1 scenario 4)
-- [ ] T062 [P] [US1] `packages/api/tests/auth/session-expiry.test.ts`: an expired or revoked session reaches zero workspace data on every protected procedure (FR-004, Story 1 scenario 3)
+- [x] T059 [P] [US1] `packages/api/tests/auth/register.test.ts`: registration creates exactly one workspace with the registrant as its only member (FR-001); a duplicate email is rejected without disclosing that the account exists
+- [x] T060 [P] [US1] `packages/api/tests/auth/sign-in.test.ts`: correct credentials issue a session; wrong password and unknown user return an identical generic `AUTH_FAILED` with no timing branch that distinguishes them
+- [x] T061 [P] [US1] `packages/api/tests/auth/throttle.test.ts`: repeated failed attempts cross the threshold and return `RATE_LIMITED` with `retryAfterSeconds` (FR-005, Story 1 scenario 4)
+- [x] T062 [P] [US1] `packages/api/tests/auth/session-expiry.test.ts`: an expired or revoked session reaches zero workspace data on every protected procedure (FR-004, Story 1 scenario 3)
 - [ ] T063 [P] [US1] `apps/web/tests/e2e/us1-isolation.spec.ts`: two registered users, each with a commitment; user A requests user B's identifier through every route and receives the absent-record response every time, plus the axe scan on the auth screens
 
 ### Implementation for User Story 1
 
-- [ ] T064 [US1] Implement `packages/api/src/routers/auth.ts`: `register`, `signIn`, `signOut`, `session` per [contracts/procedures.md](./contracts/procedures.md), with the workspace named from the registrant's display name
-- [ ] T065 [US1] Apply `protectedProcedure` to every procedure except the four unauthenticated ones (`auth.register`, `auth.signIn`, `auth.signOut`, `health.ping`) and assert the exempt set in a test, so a new procedure cannot join it silently (FR-004)
-- [ ] T066 [P] [US1] Build the register and sign-in screens in `apps/web/app/(auth)/`, with field-level errors on `details.path`, focus moved to the first invalid field, and the throttle countdown announced via the live region ([contracts/errors.md](./contracts/errors.md))
-- [ ] T067 [P] [US1] Add the strict Content-Security-Policy without `unsafe-inline` for scripts, HSTS, and HTTPS-only headers in `apps/web/next.config.ts` ("Baseline security controls")
-- [ ] T068 [US1] Wire audit writes for `sign_in_succeeded`, `sign_in_failed` and `signed_out`, on failure as well as success (FR-006)
+- [x] T064 [US1] Implement `packages/api/src/routers/auth.ts`: `register`, `signIn`, `signOut`, `session` per [contracts/procedures.md](./contracts/procedures.md), with the workspace named from the registrant's display name
+- [x] T065 [US1] Apply `protectedProcedure` to every procedure except the four unauthenticated ones (`auth.register`, `auth.signIn`, `auth.signOut`, `health.ping`) and assert the exempt set in a test, so a new procedure cannot join it silently (FR-004)
+- [x] T066 [P] [US1] Build the register and sign-in screens in `apps/web/app/(auth)/`, with field-level errors on `details.path`, focus moved to the first invalid field, and the throttle countdown announced via the live region ([contracts/errors.md](./contracts/errors.md))
+- [x] T067 [P] [US1] Add the strict Content-Security-Policy without `unsafe-inline` for scripts, HSTS, and HTTPS-only headers in `apps/web/next.config.ts` ("Baseline security controls")
+- [x] T068 [US1] Wire audit writes for `sign_in_succeeded`, `sign_in_failed` and `signed_out`, on failure as well as success (FR-006)
 
 **Checkpoint**: US1 is independently functional. Nothing else in this feature may be built before it holds — it is the precondition for storing any financial data.
 
