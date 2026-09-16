@@ -134,11 +134,18 @@ describe("row level security coverage", () => {
     expect(privileges?.select).toBe(true);
   });
 
-  it("has exactly one SECURITY DEFINER function, the session bootstrap", async () => {
-    // ADR 0007 permits one narrow escape from RLS, so that authentication can
-    // resolve a token to a workspace before any workspace is in scope. It must
-    // stay exactly one: a second such function is a second hole, and would
-    // otherwise appear without anyone noticing.
+  /**
+   * ADR 0007 permits one narrow escape from RLS, so that authentication can
+   * resolve a session token to a workspace before any workspace is in scope.
+   * ADR 0008 extends the same argument, one step earlier, to sign-in: the
+   * server cannot read a password hash under RLS before it knows which
+   * workspace the email belongs to either. The set must stay exactly these
+   * two, by name: a third such function is a third hole, and would otherwise
+   * appear without anyone noticing.
+   */
+  const SECURITY_DEFINER_FUNCTIONS = ["app_authenticate", "app_resolve_session"] as const;
+
+  it("has exactly the two documented SECURITY DEFINER functions, the auth bootstraps", async () => {
     const db = ownerDatabase();
     const result = await db.execute<{ proname: string }>(
       sql`select p.proname
@@ -148,10 +155,10 @@ describe("row level security coverage", () => {
           order by p.proname`,
     );
 
-    expect(result.rows.map((row) => row.proname)).toEqual(["app_resolve_session"]);
+    expect(result.rows.map((row) => row.proname)).toEqual([...SECURITY_DEFINER_FUNCTIONS]);
   });
 
-  it("pins the search_path of the SECURITY DEFINER function", async () => {
+  it.each(SECURITY_DEFINER_FUNCTIONS)("pins the search_path of %s", async (proname) => {
     // An unpinned search_path is the standard way a SECURITY DEFINER function
     // is hijacked: the caller creates a schema shadowing a referenced object.
     const db = ownerDatabase();
@@ -159,10 +166,27 @@ describe("row level security coverage", () => {
       sql`select p.proconfig
           from pg_proc p
           join pg_namespace n on n.oid = p.pronamespace
-          where n.nspname = 'public' and p.proname = 'app_resolve_session'`,
+          where n.nspname = 'public' and p.proname = ${proname}`,
     );
 
     expect(result.rows[0]?.proconfig?.join(",")).toMatch(/search_path=/);
+  });
+
+  it("returns nothing from app_authenticate beyond what sign-in needs", async () => {
+    // Narrow on the same terms as app_resolve_session: no email column back,
+    // no display name — only what a password check and a session issuance
+    // require.
+    const db = ownerDatabase();
+    const result = await db.execute<{ column_name: string }>(
+      sql`select unnest(p.proargnames) as column_name
+          from pg_proc p
+          join pg_namespace n on n.oid = p.pronamespace
+          where n.nspname = 'public' and p.proname = 'app_authenticate'`,
+    );
+
+    const names = result.rows.map((row) => row.column_name);
+    expect(names).not.toContain("email");
+    expect(names).not.toContain("display_name");
   });
 
   it("does not expose the session token hash through the bootstrap function", async () => {

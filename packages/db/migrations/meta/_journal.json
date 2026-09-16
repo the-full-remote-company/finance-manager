@@ -15,6 +15,20 @@
       "when": 1789512780315,
       "tag": "0001_session_resolution",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789598000000,
+      "tag": "0002_signin_lookup_bootstrap",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789598100000,
+      "tag": "0003_audit_events_null_workspace_check",
+      "breakpoints": true
     }
   ]
 }
