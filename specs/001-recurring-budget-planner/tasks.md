@@ -60,7 +60,7 @@ because it is the first with a database, a test suite and a UI package
 ### Owed verifications — spikes, not assumptions
 
 - [x] T016 **VQ-1**: write `packages/db/scripts/verify-generated-columns.sql` and the `pnpm db:verify:generated-columns` script; execute against PostgreSQL 17 to confirm `EXTRACT(... FROM <date>)` is accepted inside `GENERATED ALWAYS AS ... STORED`. Record the result in [data-model.md](./data-model.md). If rejected, switch the month-index columns to plain `integer not null` plus a `CHECK` constraint derived in `packages/core` — the schema shape and constraints are unchanged either way. Blocks T033.
-- [ ] T017 **VQ-2**: pin the tRPC client transport so queries are issued as HTTP `GET`, measure the largest real query input in this feature (a month key plus a presentation flag), and add a test asserting the method. A silent degradation to `POST` makes queries uncacheable and breaks FR-035b. Blocks T098.
+- [x] T017 **VQ-2**: pin the tRPC client transport so queries are issued as HTTP `GET`, measure the largest real query input in this feature (a month key plus a presentation flag), and add a test asserting the method. A silent degradation to `POST` makes queries uncacheable and breaks FR-035b. Blocks T098.
 
 **Checkpoint**: `pnpm verify` runs on an empty repository and every gate is red for absence of code, not for absence of configuration.
 

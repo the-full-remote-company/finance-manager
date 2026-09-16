@@ -36,6 +36,18 @@ export default defineConfig({
         },
       },
       {
+        // No DOM/JSX transform and no coverage instrumentation are wired up
+        // for apps/web yet (see the coverage.include note below, T153). This
+        // project is deliberately narrow: plain-TS unit tests under
+        // apps/web/tests/unit that need neither a database nor a browser
+        // environment, such as the VQ-2 transport pin.
+        test: {
+          name: "web-unit",
+          include: ["apps/web/tests/unit/**/*.test.ts"],
+          environment: "node",
+        },
+      },
+      {
         test: {
           name: "integration",
           include: [

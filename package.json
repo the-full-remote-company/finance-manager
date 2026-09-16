@@ -15,7 +15,7 @@
     "lint:styles": "stylelint \"{apps,packages}/**/*.css\"",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "test:unit": "vitest run --project core --project ui --project auth-unit",
+    "test:unit": "vitest run --project core --project ui --project auth-unit --project web-unit",
     "test:integration": "vitest run --project integration",
     "test:isolation": "vitest run --project isolation",
     "test:e2e": "playwright test",

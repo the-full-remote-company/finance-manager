@@ -147,6 +147,15 @@ uncacheable. The spike must measure the largest real query input in this feature
 (a month key plus a presentation flag — small) and pin the configuration
 explicitly rather than relying on the default.
 
+**VQ-2 result** (T017, `apps/web/lib/trpc/client.ts`): the largest real query
+input, `dashboard.month`'s `{ month, presentation }`, serialises to well under
+100 bytes — nowhere near `httpBatchLink`'s default 2 083-byte budget. Rather
+than trust that margin to hold as the app grows, the client uses the
+non-batching `httpLink`, which has no URL-length fallback at all: every query
+is GET, unconditionally, with no threshold to silently cross. A test at
+`apps/web/tests/unit/trpc-client.test.ts` asserts the actual `Request.method`
+reaching `fetch` for both a query and a mutation.
+
 ---
 
 ## Part B — Domain algorithms
