@@ -63,37 +63,43 @@ export const createCallerFactory = t.createCallerFactory;
  */
 export const publicProcedure = t.procedure;
 
-/**
- * Authenticated, workspace-scoped procedure.
- *
- * Two independent layers, both mandatory (Article I):
- *
- *  1. the session is resolved and the workspace pinned here, in application
- *     code, and
- *  2. the whole resolver runs inside withWorkspace, so every statement it
- *     issues is additionally filtered by the database's RLS policies.
- *
- * "Application-layer scoping in tRPC middleware is required in addition, never
- * instead."
- */
 function toDate(value: string | Date): Date {
   return value instanceof Date ? value : new Date(value);
 }
 
-export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  if (ctx.sessionToken === null || ctx.sessionToken.length === 0) {
-    throw toTrpcError(appError("AUTH_FAILED"));
-  }
+export interface ResolvedSession {
+  readonly sessionId: string;
+  readonly userId: string;
+  readonly workspaceId: string;
+}
 
-  const tokenHash = hashSessionToken(ctx.sessionToken);
+/**
+ * Resolves a raw session token to its identifiers, or `null` when the token
+ * is absent, unknown, expired or revoked — the three latter cases collapsed
+ * into one answer, per Story 1 scenario 3, so a caller cannot distinguish
+ * "never existed" from "died".
+ *
+ * Shared by `protectedProcedure`, which throws `AUTH_FAILED` on `null`, and
+ * `auth.session`, which returns `null` itself rather than erroring
+ * (contracts/procedures.md: "the client can decide between a sign-in screen
+ * and a redirect without treating the absence of a session as a failure").
+ *
+ * This is the bootstrap ADR 0007 describes: `sessions` is RLS-protected and
+ * no workspace is in scope yet, so a direct select would correctly return
+ * zero rows and authentication could never start. `app_resolve_session` is a
+ * narrow `SECURITY DEFINER` function taking a hash and returning five
+ * non-secret fields — one of exactly two such functions in the schema
+ * (ADR 0008), and a test asserts the set stays that size.
+ */
+export async function resolveSession(
+  db: Context["db"],
+  sessionToken: string | null,
+): Promise<ResolvedSession | null> {
+  if (sessionToken === null || sessionToken.length === 0) return null;
 
-  // The bootstrap, per ADR 0007. `sessions` is RLS-protected and no workspace
-  // is in scope yet, so a direct select would correctly return zero rows and
-  // authentication could never start. app_resolve_session is a narrow
-  // SECURITY DEFINER function taking a hash and returning five non-secret
-  // fields — the only path by which this role reads a tenant table unscoped,
-  // and a test asserts it stays the only one.
-  const found = await ctx.db.execute<{
+  const tokenHash = hashSessionToken(sessionToken);
+
+  const found = await db.execute<{
     session_id: string;
     user_id: string;
     workspace_id: string;
@@ -113,22 +119,40 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
       revokedAt: session.revoked_at === null ? null : toDate(session.revoked_at),
     })
   ) {
+    return null;
+  }
+
+  return {
+    sessionId: session.session_id,
+    userId: session.user_id,
+    workspaceId: session.workspace_id,
+  };
+}
+
+/**
+ * Authenticated, workspace-scoped procedure.
+ *
+ * Two independent layers, both mandatory (Article I):
+ *
+ *  1. the session is resolved and the workspace pinned here, in application
+ *     code, and
+ *  2. the whole resolver runs inside withWorkspace, so every statement it
+ *     issues is additionally filtered by the database's RLS policies.
+ *
+ * "Application-layer scoping in tRPC middleware is required in addition, never
+ * instead."
+ */
+export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  const session = await resolveSession(ctx.db, ctx.sessionToken);
+  if (!session) {
     // Story 1 scenario 3: an expired or revoked session reaches no data.
     // Identical error either way: "no such session" and "your session died"
     // are the same answer to the client.
     throw toTrpcError(appError("AUTH_FAILED"));
   }
 
-  return withWorkspace(ctx.db, session.workspace_id, async (tx) => {
-    const authenticated: AuthenticatedContext = {
-      ...ctx,
-      db: tx,
-      session: {
-        sessionId: session.session_id,
-        userId: session.user_id,
-        workspaceId: session.workspace_id,
-      },
-    };
+  return withWorkspace(ctx.db, session.workspaceId, async (tx) => {
+    const authenticated: AuthenticatedContext = { ...ctx, db: tx, session };
     return next({ ctx: authenticated });
   });
 });

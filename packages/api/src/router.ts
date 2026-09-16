@@ -1,3 +1,4 @@
+import { authRouter } from "./routers/auth.js";
 import { healthRouter } from "./routers/health.js";
 import { router } from "./trpc.js";
 
@@ -8,6 +9,7 @@ import { router } from "./trpc.js";
  */
 export const appRouter = router({
   health: healthRouter,
+  auth: authRouter,
 });
 
 export type AppRouter = typeof appRouter;

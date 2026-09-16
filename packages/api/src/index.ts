@@ -11,4 +11,10 @@ export {
   type AppErrorCode,
   type AppErrorDetails,
 } from "./errors.js";
-export { protectedProcedure, publicProcedure, router } from "./trpc.js";
+export {
+  protectedProcedure,
+  publicProcedure,
+  resolveSession,
+  router,
+  type ResolvedSession,
+} from "./trpc.js";
