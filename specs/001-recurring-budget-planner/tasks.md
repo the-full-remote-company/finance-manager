@@ -148,7 +148,7 @@ any route, including by direct identifier.
 - [x] T060 [P] [US1] `packages/api/tests/auth/sign-in.test.ts`: correct credentials issue a session; wrong password and unknown user return an identical generic `AUTH_FAILED` with no timing branch that distinguishes them
 - [x] T061 [P] [US1] `packages/api/tests/auth/throttle.test.ts`: repeated failed attempts cross the threshold and return `RATE_LIMITED` with `retryAfterSeconds` (FR-005, Story 1 scenario 4)
 - [x] T062 [P] [US1] `packages/api/tests/auth/session-expiry.test.ts`: an expired or revoked session reaches zero workspace data on every protected procedure (FR-004, Story 1 scenario 3)
-- [ ] T063 [P] [US1] `apps/web/tests/e2e/us1-isolation.spec.ts`: two registered users, each with a commitment; user A requests user B's identifier through every route and receives the absent-record response every time, plus the axe scan on the auth screens
+- [x] T063 [P] [US1] `apps/web/tests/e2e/us1-isolation.spec.ts`: two registered users, each with a commitment; user A requests user B's identifier through every route and receives the absent-record response every time, plus the axe scan on the auth screens
 
 ### Implementation for User Story 1
 
@@ -179,7 +179,7 @@ confirm both persist with every field intact.
 - [x] T073 [P] [US2] `packages/api/tests/reference-data-delete.test.ts`: deleting a referenced category or account returns `STILL_REFERENCED` with the count, and both reference kinds — source and transfer destination — count toward an account's total (FR-009, edge case). Deleting the last *unreferenced* category or account is permitted
 - [x] T074 [P] [US2] `packages/api/tests/commitments-create.test.ts`: every rule in the `commitments.create` table — `ANCHOR_REQUIRED`, `TRANSFER_EQUALS_SOURCE`, `END_BEFORE_START`, `NEGATIVE_AMOUNT`, `DIRECTION_MISMATCH`, and `NOT_FOUND` for a category or account in another workspace. An amount of zero is accepted. `sharePercent` defaults to 100 and accepts 0 through 100 inclusive (FR-015)
 - [x] T075 [P] [US2] `packages/api/tests/commitments-mutate.test.ts`: `update` cannot change an amount (that is `amounts.*`); `delete` cascades to amounts and overrides and removes the commitment from every month in the horizon, including past ones (Story 2 scenario 5)
-- [ ] T076 [P] [US2] `apps/web/tests/e2e/us2-capture.spec.ts`: create an account "Girokonto" and a category "Wohnen", then a monthly expense "Miete" of 950,00 €; reopen the list and assert every field, German locale formatting with a euro symbol, a missing-required-field message, and the axe scan
+- [x] T076 [P] [US2] `apps/web/tests/e2e/us2-capture.spec.ts`: create an account "Girokonto" and a category "Wohnen", then a monthly expense "Miete" of 950,00 €; reopen the list and assert every field, German locale formatting with a euro symbol, a missing-required-field message, and the axe scan
 
 ### Implementation for User Story 2
 
@@ -192,7 +192,7 @@ confirm both persist with every field intact.
 - [x] T083 [US2] Implement `packages/api/src/routers/commitments.ts`: `list`, `get`, `create`, `update`, `delete`, with `create` enforcing "at least one amount" and "earliest effective month at or before the start month" in the same transaction (FR-011)
 - [x] T084 [P] [US2] Build the settings screens for accounts and categories in `apps/web/app/(app)/settings/`, including the blocking `STILL_REFERENCED` dialog that states the count and offers rename instead of delete
 - [x] T085 [P] [US2] Build the commitment list and the create/edit form in `apps/web/app/(app)/commitments/`, with the anchor field revealed only for a non-monthly rhythm, and the empty-state explanation that a category and an account must exist first (edge case)
-- [ ] T086 [US2] Add the "add a commitment on a phone in under 60 seconds" Playwright measurement to `us2-capture.spec.ts` (SC-005)
+- [x] T086 [US2] Add the "add a commitment on a phone in under 60 seconds" Playwright measurement to `us2-capture.spec.ts` (SC-005)
 
 **Checkpoint**: US1 and US2 both work independently. Data exists; nothing displays it yet.
 

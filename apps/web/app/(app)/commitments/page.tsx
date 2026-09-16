@@ -1,6 +1,6 @@
 "use client";
 
-import { Table, type TableColumn } from "@finance/ui";
+import { Amount, Table, type TableColumn } from "@finance/ui";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { useRequireSession } from "../../../lib/use-require-session.js";
 interface CommitmentRow {
   id: string;
   name: string;
+  direction: "income" | "expense";
   categoryName: string;
   sourceAccountName: string;
   rhythm: "monthly" | "quarterly" | "half_yearly" | "yearly" | "one_off";
@@ -53,8 +54,13 @@ export default function CommitmentsPage() {
       key: "amount",
       header: t("columnAmount"),
       align: "end",
-      render: (row) =>
-        `${(Number(row.currentAmount.minor) / 100).toFixed(2)} ${row.currentAmount.currency}`,
+      render: (row) => (
+        <Amount
+          value={{ minor: BigInt(row.currentAmount.minor), currency: row.currentAmount.currency }}
+          direction={row.direction}
+          directionLabel={row.direction === "income" ? t("directionIncome") : t("directionExpense")}
+        />
+      ),
     },
   ];
 
