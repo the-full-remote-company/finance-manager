@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { proxy } from "../../proxy.js";
 
 /**
@@ -48,5 +48,31 @@ describe("proxy CSP (T067)", () => {
     const response = proxy(new NextRequest("https://example.test/"));
     const csp = response.headers.get("Content-Security-Policy");
     expect(csp).toContain("frame-ancestors 'none'");
+  });
+
+  describe("unsafe-eval (webpack's development devtool)", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("is absent outside development: the deployed build never evaluates a string as code", () => {
+      vi.stubEnv("NODE_ENV", "production");
+      const response = proxy(new NextRequest("https://example.test/"));
+      const scriptSrc = response.headers
+        .get("Content-Security-Policy")
+        ?.split(";")
+        .find((directive) => directive.trim().startsWith("script-src"));
+      expect(scriptSrc).not.toContain("unsafe-eval");
+    });
+
+    it("is present only in development: next dev cannot run without it", () => {
+      vi.stubEnv("NODE_ENV", "development");
+      const response = proxy(new NextRequest("https://example.test/"));
+      const scriptSrc = response.headers
+        .get("Content-Security-Policy")
+        ?.split(";")
+        .find((directive) => directive.trim().startsWith("script-src"));
+      expect(scriptSrc).toContain("unsafe-eval");
+    });
   });
 });

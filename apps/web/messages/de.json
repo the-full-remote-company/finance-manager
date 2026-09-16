@@ -36,5 +36,91 @@
       "rateLimited": "Zu viele Versuche. Bitte in {seconds} Sekunden erneut versuchen.",
       "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
     }
+  },
+  "settings": {
+    "accounts": {
+      "title": "Konten",
+      "nameLabel": "Name",
+      "noteLabel": "Notiz",
+      "createSubmit": "Konto hinzufügen",
+      "empty": "Noch keine Konten vorhanden.",
+      "columnName": "Name",
+      "columnNote": "Notiz",
+      "columnActions": "Aktionen",
+      "renameSubmit": "Umbenennen",
+      "deleteAction": "Löschen",
+      "stillReferencedTitle": "Konto wird verwendet",
+      "stillReferencedBody": "Dieses Konto wird noch von {count} Verpflichtung(en) verwendet und kann nicht gelöscht werden. Es kann stattdessen umbenannt werden.",
+      "closeLabel": "Schließen",
+      "nameTaken": "Dieser Name wird bereits verwendet.",
+      "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    },
+    "categories": {
+      "title": "Kategorien",
+      "nameLabel": "Name",
+      "directionLabel": "Richtung",
+      "directionIncome": "Einnahme",
+      "directionExpense": "Ausgabe",
+      "createSubmit": "Kategorie hinzufügen",
+      "empty": "Noch keine Kategorien vorhanden.",
+      "columnName": "Name",
+      "columnDirection": "Richtung",
+      "columnActions": "Aktionen",
+      "renameSubmit": "Umbenennen",
+      "deleteAction": "Löschen",
+      "stillReferencedTitle": "Kategorie wird verwendet",
+      "stillReferencedBody": "Diese Kategorie wird noch von {count} Verpflichtung(en) verwendet und kann nicht gelöscht werden. Sie kann stattdessen umbenannt werden.",
+      "closeLabel": "Schließen",
+      "nameTaken": "Dieser Name wird bereits verwendet.",
+      "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    }
+  },
+  "commitments": {
+    "list": {
+      "title": "Verpflichtungen",
+      "empty": "Noch keine Verpflichtungen vorhanden.",
+      "needsSetupFirst": "Zuerst müssen ein Konto und eine Kategorie angelegt werden.",
+      "goToAccounts": "Konten anlegen",
+      "goToCategories": "Kategorien anlegen",
+      "createLink": "Neue Verpflichtung",
+      "columnName": "Name",
+      "columnCategory": "Kategorie",
+      "columnAccount": "Konto",
+      "columnAmount": "Betrag",
+      "columnRhythm": "Rhythmus"
+    },
+    "rhythm": {
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljährlich",
+      "half_yearly": "Halbjährlich",
+      "yearly": "Jährlich",
+      "one_off": "Einmalig"
+    },
+    "form": {
+      "title": "Neue Verpflichtung",
+      "nameLabel": "Name",
+      "directionLabel": "Richtung",
+      "directionIncome": "Einnahme",
+      "directionExpense": "Ausgabe",
+      "categoryLabel": "Kategorie",
+      "sourceAccountLabel": "Konto",
+      "transferAccountLabel": "Zielkonto (optional)",
+      "transferAccountNone": "Kein Zielkonto",
+      "rhythmLabel": "Rhythmus",
+      "anchorMonthLabel": "Ankermonat",
+      "startDateLabel": "Startdatum",
+      "endDateLabel": "Vertragsende (optional)",
+      "amountLabel": "Betrag in Euro",
+      "submit": "Verpflichtung anlegen",
+      "submitting": "Wird angelegt …"
+    },
+    "errors": {
+      "anchorRequired": "Für diesen Rhythmus ist ein Ankermonat erforderlich.",
+      "transferEqualsSource": "Zielkonto darf nicht dem Konto entsprechen.",
+      "endBeforeStart": "Das Vertragsende darf nicht vor dem Startdatum liegen.",
+      "directionMismatch": "Die Richtung stimmt nicht mit der Kategorie überein.",
+      "validationFailed": "Bitte die markierten Felder prüfen.",
+      "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    }
   }
 }

@@ -190,8 +190,8 @@ confirm both persist with every field intact.
 - [x] T081 [P] [US2] Implement `packages/core/src/commitment/validate.ts`: the direction-agreement rule that the database cannot express across tables without a trigger, which Article VI forbids — validated in the domain and covered by T074
 - [x] T082 [US2] Implement `packages/api/src/routers/accounts.ts` and `categories.ts`: `list`, `create`, `rename`, `reorder`, `delete`, `referenceCount`
 - [x] T083 [US2] Implement `packages/api/src/routers/commitments.ts`: `list`, `get`, `create`, `update`, `delete`, with `create` enforcing "at least one amount" and "earliest effective month at or before the start month" in the same transaction (FR-011)
-- [ ] T084 [P] [US2] Build the settings screens for accounts and categories in `apps/web/app/(app)/settings/`, including the blocking `STILL_REFERENCED` dialog that states the count and offers rename instead of delete
-- [ ] T085 [P] [US2] Build the commitment list and the create/edit form in `apps/web/app/(app)/commitments/`, with the anchor field revealed only for a non-monthly rhythm, and the empty-state explanation that a category and an account must exist first (edge case)
+- [x] T084 [P] [US2] Build the settings screens for accounts and categories in `apps/web/app/(app)/settings/`, including the blocking `STILL_REFERENCED` dialog that states the count and offers rename instead of delete
+- [x] T085 [P] [US2] Build the commitment list and the create/edit form in `apps/web/app/(app)/commitments/`, with the anchor field revealed only for a non-monthly rhythm, and the empty-state explanation that a category and an account must exist first (edge case)
 - [ ] T086 [US2] Add the "add a commitment on a phone in under 60 seconds" Playwright measurement to `us2-capture.spec.ts` (SC-005)
 
 **Checkpoint**: US1 and US2 both work independently. Data exists; nothing displays it yet.

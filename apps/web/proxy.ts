@@ -20,9 +20,21 @@ export function proxy(request: NextRequest): NextResponse {
   // which does not support Node built-ins.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
+  // webpack's development devtool wraps every module in `eval(...)` for fast
+  // incremental rebuilds and source maps; `next dev` cannot run at all
+  // without `unsafe-eval`, confirmed by reproducing the failure (every click
+  // handler silently never firing, since hydration itself threw). Production
+  // never evaluates a string as code, so `unsafe-eval` is added only in
+  // development — the deployed, self-hosted build this control is actually
+  // for stays exactly as strict.
+  const scriptSrc =
+    process.env.NODE_ENV === "development"
+      ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
+      : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`;
+
   const csp = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    scriptSrc,
     // Tailwind and @tfrc/product compile to external stylesheets; the app
     // renders no inline style attribute or <style> tag of its own. Kept
     // permissive here only because Next.js itself may inject one for

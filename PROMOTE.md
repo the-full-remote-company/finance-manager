@@ -18,10 +18,10 @@ tracking file is worse than none, because the next contributor will trust it.
 
 | Component | Uses | Where | Promote at | Notes |
 |---|---|---|---|---|
-| `Table` | 0 | — | 3 | Built in T051 (`packages/ui/src/Table.tsx`). Not yet consumed by a screen; `Uses` moves to 1 at the amount-history panel (T140). |
-| `DatePicker` | 0 | — | 3 | Built in T051 (`packages/ui/src/DatePicker.tsx`). Not yet consumed. Needed for start date, contract end date, notice deadline, amount effective-from. Day precision; the projection reduces it to a month. |
-| `Select` | 0 | — | 3 | Built in T051 (`packages/ui/src/Select.tsx`). Not yet consumed. Needed for category, account and rhythm selection. |
-| `Modal` | 0 | — | 3 | Built in T051 (`packages/ui/src/Modal.tsx`). Not yet consumed. Needed for the `STILL_REFERENCED` refusal and the delete-account confirmation. |
+| `Table` | 3 | `settings/accounts`, `settings/categories`, `commitments` (list) | 3 — **due** | First consumed in T084/T085. Three distinct screens now render it identically (columns + rows + empty message); per the rule this is due for an upstream promotion review, not yet performed — no human has reviewed whether `@tfrc/product` should gain a table primitive next release. Flagged here rather than promoted silently. |
+| `DatePicker` | 2 | `commitments/new` (start date, contract end date) | 3 | Still short of three. The amount-history panel (T140) and the notice-deadline field will likely complete the set. |
+| `Select` | 6 | `settings/categories` (direction, 1), `commitments/new` (direction, category, source account, transfer account, rhythm, 5) | 3 — **due** | Past three distinct field purposes on the same screen; flagged, not promoted, for the same reason as `Table`. |
+| `Modal` | 4 | `settings/accounts` (rename, still-referenced), `settings/categories` (rename, still-referenced) | 3 — **due** | Same shape (title + body + one or two actions) at every site. Flagged, not promoted. |
 
 `Uses` counts a component actually rendered from a screen, not its existence in
 `packages/ui/src` — an unconsumed component cannot be third-used. Nothing here
