@@ -4,6 +4,7 @@ import { sql, withWorkspace } from "@finance/db";
 import { z } from "zod";
 import { appError, toTrpcError } from "../errors.js";
 import { AUTH_RATE_LIMIT, consumeRateLimit } from "../middleware/rate-limit.js";
+import { isUniqueViolation } from "../pg-errors.js";
 import { publicProcedure, resolveSession, router } from "../trpc.js";
 
 /**
@@ -21,21 +22,6 @@ const SESSION_TTL_MS = Number(process.env.SESSION_TTL_HOURS ?? 720) * 60 * 60 * 
 
 /** Case-insensitive per `users_email_lower_key`; normalised once, at the boundary. */
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
-
-/**
- * Postgres's unique-violation SQLSTATE. node-postgres surfaces it as `.code`
- * on the driver error, which Drizzle wraps in its own error carrying the
- * original as `.cause` — so this walks the chain rather than trusting either
- * layer to be the one holding it.
- */
-function isUniqueViolation(error: unknown): boolean {
-  let current: unknown = error;
-  for (let depth = 0; depth < 5 && current !== null && typeof current === "object"; depth += 1) {
-    if ("code" in current && (current as { code?: unknown }).code === "23505") return true;
-    current = (current as { cause?: unknown }).cause;
-  }
-  return false;
-}
 
 export const authRouter = router({
   register: publicProcedure

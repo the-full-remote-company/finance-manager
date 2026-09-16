@@ -6,3 +6,4 @@
 // not by convention.
 export * from "./money/index.js";
 export * from "./time/index.js";
+export * from "./commitment/index.js";
