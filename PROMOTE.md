@@ -18,13 +18,14 @@ tracking file is worse than none, because the next contributor will trust it.
 
 | Component | Uses | Where | Promote at | Notes |
 |---|---|---|---|---|
-| `Table` | 0 | — | 3 | Not shipped by `@tfrc/product`. Needed for the amount history panel. |
-| `DatePicker` | 0 | — | 3 | Not shipped. Needed for start date, contract end date, notice deadline, amount effective-from. Day precision; the projection reduces it to a month. |
-| `Select` | 0 | — | 3 | Not shipped. Needed for category, account and rhythm selection. |
-| `Modal` | 0 | — | 3 | Not shipped. Needed for the `STILL_REFERENCED` refusal and the delete-account confirmation. |
+| `Table` | 0 | — | 3 | Built in T051 (`packages/ui/src/Table.tsx`). Not yet consumed by a screen; `Uses` moves to 1 at the amount-history panel (T140). |
+| `DatePicker` | 0 | — | 3 | Built in T051 (`packages/ui/src/DatePicker.tsx`). Not yet consumed. Needed for start date, contract end date, notice deadline, amount effective-from. Day precision; the projection reduces it to a month. |
+| `Select` | 0 | — | 3 | Built in T051 (`packages/ui/src/Select.tsx`). Not yet consumed. Needed for category, account and rhythm selection. |
+| `Modal` | 0 | — | 3 | Built in T051 (`packages/ui/src/Modal.tsx`). Not yet consumed. Needed for the `STILL_REFERENCED` refusal and the delete-account confirmation. |
 
-Counts are 0 until the components are built and used. Nothing here is a
-promotion candidate yet, and nothing may be promoted before its third use.
+`Uses` counts a component actually rendered from a screen, not its existence in
+`packages/ui/src` — an unconsumed component cannot be third-used. Nothing here
+is a promotion candidate yet, and nothing may be promoted before its third use.
 
 ## Consumed from `@tfrc/product@1.1.0`
 

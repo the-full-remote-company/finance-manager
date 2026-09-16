@@ -16,7 +16,10 @@
     "react": "^19.3.0"
   },
   "devDependencies": {
-    "@types/react": "^19.3.0"
+    "@types/node": "22.20.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "comment": "Article V: @tfrc/* is pinned exactly, never a range. tfrc-verify rejects ranges."
 }

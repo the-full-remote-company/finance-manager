@@ -114,11 +114,11 @@ error contract. Nothing in any user story can be built before these hold.
 
 ### Web shell, locale, design system
 
-- [ ] T048 Configure `next-intl` with `de-DE` as the default and only locale, `apps/web/messages/de.json`, and the currency and date formatters built on `Intl.NumberFormat` and `Intl.DateTimeFormat` — never hand-rolled (Article II, FR-042)
-- [ ] T049 *(test first)* `packages/ui/tests/design-system-contract.test.ts`: assert the existence of the 17 `@tfrc/product` classes this app consumes — `.btn` `.btn--primary` `.btn--secondary` `.btn--ghost` `.btn--block` `.field` `.list` `.row` `.amt` `.amt--gain` `.amt--loss` `.balance` `.pill` `.pill--gain` `.pill--loss` `.seg` `.tabs` — so an upstream rename fails the build rather than a screen (Article V)
-- [ ] T050 [P] Build `packages/ui/src/Amount.tsx`: renders a `Money` via `Intl.NumberFormat`, pairs every sign with a label or symbol, and uses `.amt--gain`/`.amt--loss` only for literal money direction — never for status (Article IV, FR-043, research Part C)
-- [ ] T051 [P] Build the local components `@tfrc/product` does not ship — `Table`, `DatePicker`, `Select`, `Modal` — in `packages/ui/src/`, on published tokens only, and log each in `PROMOTE.md` at use count 1 (Article V)
-- [ ] T052 [P] Build `apps/web/app/layout.tsx` with the app shell: skip link, landmark regions, the `themes/finance` stylesheet, and an ARIA live region for the countdown and offline announcements
+- [x] T048 Configure `next-intl` with `de-DE` as the default and only locale, `apps/web/messages/de.json`, and the currency and date formatters built on `Intl.NumberFormat` and `Intl.DateTimeFormat` — never hand-rolled (Article II, FR-042)
+- [x] T049 *(test first)* `packages/ui/tests/design-system-contract.test.ts`: assert the existence of the 17 `@tfrc/product` classes this app consumes — `.btn` `.btn--primary` `.btn--secondary` `.btn--ghost` `.btn--block` `.field` `.list` `.row` `.amt` `.amt--gain` `.amt--loss` `.balance` `.pill` `.pill--gain` `.pill--loss` `.seg` `.tabs` — so an upstream rename fails the build rather than a screen (Article V)
+- [x] T050 [P] Build `packages/ui/src/Amount.tsx`: renders a `Money` via `Intl.NumberFormat`, pairs every sign with a label or symbol, and uses `.amt--gain`/`.amt--loss` only for literal money direction — never for status (Article IV, FR-043, research Part C)
+- [x] T051 [P] Build the local components `@tfrc/product` does not ship — `Table`, `DatePicker`, `Select`, `Modal` — in `packages/ui/src/`, on published tokens only, and log each in `PROMOTE.md` at use count 1 (Article V)
+- [x] T052 [P] Build `apps/web/app/layout.tsx` with the app shell: skip link, landmark regions, the `themes/finance` stylesheet, and an ARIA live region for the countdown and offline announcements
 
 ### Auth foundation in `packages/auth` — strict TDD, Article III
 
