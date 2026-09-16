@@ -5,6 +5,7 @@ import {
   appDatabase,
   assertAppRoleIsNotPrivileged,
   closePools,
+  expectRejection,
   resetWorkspaces,
   seedWorkspace,
   type SeededWorkspace,
@@ -19,32 +20,6 @@ import {
  * Every assertion below runs as the non-owner `app` role. A leak test run as
  * the owner is vacuous, so the role is verified before anything else.
  */
-
-/**
- * Drizzle wraps a driver error as `Failed query: ...` and hangs the real
- * PostgreSQL message off `cause`. Asserting on the wrapper message would pass
- * for any failure at all, including a typo in the SQL, so the cause chain is
- * walked to the root and matched there.
- */
-async function expectRejection(work: Promise<unknown>, pattern: RegExp): Promise<void> {
-  let thrown: unknown;
-  try {
-    await work;
-  } catch (error) {
-    thrown = error;
-  }
-
-  expect(thrown, "expected the database to reject this statement").toBeDefined();
-
-  const messages: string[] = [];
-  let current: unknown = thrown;
-  while (current instanceof Error) {
-    messages.push(current.message);
-    current = current.cause;
-  }
-
-  expect(messages.join(" | ")).toMatch(pattern);
-}
 
 /** Every tenant-scoped table, with the column that ties a row to its workspace. */
 const TENANT_TABLES = [

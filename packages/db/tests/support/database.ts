@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import pg from "pg";
+import { expect } from "vitest";
 import { createDatabase, createPool, type Database } from "../../src/client.js";
 
 /**
@@ -38,6 +39,32 @@ export async function closePools(): Promise<void> {
   ownerPool = undefined;
 }
 
+/**
+ * Drizzle wraps a driver error as `Failed query: ...` and hangs the real
+ * PostgreSQL message off `cause`. Asserting on the wrapper message would pass
+ * for any failure at all, including a typo in the SQL, so the cause chain is
+ * walked to the root and matched there.
+ */
+export async function expectRejection(work: Promise<unknown>, pattern: RegExp): Promise<void> {
+  let thrown: unknown;
+  try {
+    await work;
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(thrown, "expected the database to reject this statement").toBeDefined();
+
+  const messages: string[] = [];
+  let current: unknown = thrown;
+  while (current instanceof Error) {
+    messages.push(current.message);
+    current = current.cause;
+  }
+
+  expect(messages.join(" | ")).toMatch(pattern);
+}
+
 /** Confirms the app role really is RLS-bound, so a green suite cannot be a false negative. */
 export async function assertAppRoleIsNotPrivileged(): Promise<void> {
   const db = appDatabase();
@@ -69,6 +96,11 @@ export interface SeededWorkspace {
   readonly userId: string;
   readonly sessionId: string;
   readonly auditEventId: string;
+  readonly accountId: string;
+  readonly categoryId: string;
+  readonly commitmentId: string;
+  readonly commitmentAmountId: string;
+  readonly amountOverrideId: string;
 }
 
 /**
@@ -110,5 +142,56 @@ export async function seedWorkspace(name: string): Promise<SeededWorkspace> {
   const auditEventId = audit.rows[0]?.id;
   if (!auditEventId) throw new Error("failed to seed audit event");
 
-  return { workspaceId, userId, sessionId, auditEventId };
+  const account = await db.execute<{ id: string }>(
+    sql`insert into "accounts" ("workspace_id", "name", "sort_order")
+        values (${workspaceId}, ${`${name}-konto`}, 0)
+        returning "id"`,
+  );
+  const accountId = account.rows[0]?.id;
+  if (!accountId) throw new Error("failed to seed account");
+
+  const category = await db.execute<{ id: string }>(
+    sql`insert into "categories" ("workspace_id", "name", "direction", "sort_order")
+        values (${workspaceId}, ${`${name}-kategorie`}, 'expense', 0)
+        returning "id"`,
+  );
+  const categoryId = category.rows[0]?.id;
+  if (!categoryId) throw new Error("failed to seed category");
+
+  const commitment = await db.execute<{ id: string }>(
+    sql`insert into "commitments"
+          ("workspace_id", "name", "direction", "category_id", "source_account_id", "rhythm", "start_date")
+        values (${workspaceId}, ${`${name}-verpflichtung`}, 'expense', ${categoryId}, ${accountId}, 'monthly', '2026-01-01')
+        returning "id"`,
+  );
+  const commitmentId = commitment.rows[0]?.id;
+  if (!commitmentId) throw new Error("failed to seed commitment");
+
+  const commitmentAmount = await db.execute<{ id: string }>(
+    sql`insert into "commitment_amounts" ("workspace_id", "commitment_id", "effective_from", "amount_minor")
+        values (${workspaceId}, ${commitmentId}, '2026-01-01', 1000)
+        returning "id"`,
+  );
+  const commitmentAmountId = commitmentAmount.rows[0]?.id;
+  if (!commitmentAmountId) throw new Error("failed to seed commitment amount");
+
+  const amountOverride = await db.execute<{ id: string }>(
+    sql`insert into "amount_overrides" ("workspace_id", "commitment_id", "month", "amount_minor")
+        values (${workspaceId}, ${commitmentId}, 24312, 2000)
+        returning "id"`,
+  );
+  const amountOverrideId = amountOverride.rows[0]?.id;
+  if (!amountOverrideId) throw new Error("failed to seed amount override");
+
+  return {
+    workspaceId,
+    userId,
+    sessionId,
+    auditEventId,
+    accountId,
+    categoryId,
+    commitmentId,
+    commitmentAmountId,
+    amountOverrideId,
+  };
 }

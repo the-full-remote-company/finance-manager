@@ -29,6 +29,13 @@
       "when": 1789598100000,
       "tag": "0003_audit_events_null_workspace_check",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789546596906,
+      "tag": "0004_reference_data_and_commitments",
+      "breakpoints": true
     }
   ]
 }
