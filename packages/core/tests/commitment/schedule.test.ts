@@ -1,23 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  amountInForce,
-  dueMonthsInRange,
-  isActiveInMonth,
-  isDueMonth,
-} from "../../src/commitment/schedule.js";
-
-describe("isActiveInMonth", () => {
-  it("is active from the start month onward with no end", () => {
-    expect(isActiveInMonth(100, 100, null)).toBe(true);
-    expect(isActiveInMonth(150, 100, null)).toBe(true);
-    expect(isActiveInMonth(99, 100, null)).toBe(false);
-  });
-
-  it("is inactive after the end month, inclusive at the boundary", () => {
-    expect(isActiveInMonth(110, 100, 110)).toBe(true);
-    expect(isActiveInMonth(111, 100, 110)).toBe(false);
-  });
-});
+import { amountInForce, dueMonthsInRange, isDueMonth } from "../../src/commitment/schedule.js";
 
 describe("isDueMonth", () => {
   it("every active month is due for monthly", () => {

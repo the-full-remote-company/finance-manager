@@ -48,7 +48,7 @@ export default function SignInPage() {
 
     try {
       await trpc.auth.signIn.mutate({ email, password });
-      router.push("/");
+      router.push("/dashboard");
     } catch (error) {
       const appError = toAppClientError(error);
 

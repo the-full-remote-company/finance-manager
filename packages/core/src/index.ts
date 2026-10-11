@@ -7,3 +7,4 @@
 export * from "./money/index.js";
 export * from "./time/index.js";
 export * from "./commitment/index.js";
+export * from "./dashboard/index.js";

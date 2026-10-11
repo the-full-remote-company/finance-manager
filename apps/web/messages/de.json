@@ -75,6 +75,32 @@
       "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
     }
   },
+  "dashboard": {
+    "title": "Übersicht",
+    "signOut": "Abmelden",
+    "presentationLabel": "Ansicht",
+    "presentationCash": "Kassenwirksam",
+    "presentationSmoothed": "Geglättet",
+    "monthNavLabel": "Monatsnavigation",
+    "monthPrev": "Vorheriger Monat",
+    "monthNext": "Nächster Monat",
+    "horizonBoundaryFirst": "Dies ist der früheste verfügbare Monat.",
+    "horizonBoundaryLast": "Dies ist der späteste verfügbare Monat.",
+    "notAvailableOffline": "Für diesen Monat liegen keine Offline-Daten vor.",
+    "retrievedAt": "Stand: {time}",
+    "remainingLabel": "Verbleibend",
+    "remainingPositive": "Überschuss",
+    "remainingNegative": "Fehlbetrag",
+    "incomeTitle": "Einnahmen",
+    "incomeEmpty": "Keine Einnahmen in diesem Monat.",
+    "incomeTotalLabel": "Einnahmen gesamt:",
+    "expensesTitle": "Ausgaben",
+    "expensesEmpty": "Keine Ausgaben in diesem Monat.",
+    "expenseTotalLabel": "Ausgaben gesamt:",
+    "reservesTitle": "Rücklagen",
+    "directionIncome": "Einnahme",
+    "directionExpense": "Ausgabe"
+  },
   "commitments": {
     "list": {
       "title": "Verpflichtungen",

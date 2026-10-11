@@ -214,25 +214,25 @@ aggregation function rather than replacing it.
 
 ### Tests for User Story 3 (write first, observe failing)
 
-- [ ] T087 [P] [US3] `packages/core/tests/time/activity-window.test.ts`: active in month `m` when `m >= monthOf(startDate)` and, where an end date exists, `m <= monthOf(endDate)`; a commitment starting 15 March is active in March at its full amount, never prorated (FR-026, FR-026a)
-- [ ] T088 [P] [US3] `packages/core/tests/dashboard/aggregate.test.ts`: income list and total, per-category expense totals, overall expense total, combined total, `remaining` (which may be negative), and `percentOfIncome` as an exact rational — `null` when income is zero (FR-031, FR-033, FR-034). A category with no active commitment in the month is omitted, uniformly across months
-- [ ] T089 [P] [US3] `packages/api/tests/dashboard-month.test.ts`: `MONTH_OUT_OF_HORIZON` outside the rolling window; `retrievedAt` present on every response; presentation is a parameter, never server state (FR-030 is client-side)
-- [ ] T090 [P] [US3] `apps/web/tests/e2e/us3-dashboard.spec.ts`: category totals and percentages against a known fixture; zero-income month suppresses percentages; month navigation preserves scroll position; no horizontal scrolling at the mobile viewport (FR-035); axe scan
-- [ ] T091 [P] [US3] `apps/web/tests/e2e/us3-offline.spec.ts`: the app launches with the network disabled; a previously viewed month renders within 2 s marked with its retrieval time; a month never visited shows "not available offline", distinct from "no data"; a save attempt fails immediately with `OFFLINE_READ_ONLY` and nothing is queued; sign-out destroys every cache (FR-035a–FR-035e, SC-011)
+- [x] T087 [P] [US3] `packages/core/tests/time/activity-window.test.ts`: active in month `m` when `m >= monthOf(startDate)` and, where an end date exists, `m <= monthOf(endDate)`; a commitment starting 15 March is active in March at its full amount, never prorated (FR-026, FR-026a)
+- [x] T088 [P] [US3] `packages/core/tests/dashboard/aggregate.test.ts`: income list and total, per-category expense totals, overall expense total, combined total, `remaining` (which may be negative), and `percentOfIncome` as an exact rational — `null` when income is zero (FR-031, FR-033, FR-034). A category with no active commitment in the month is omitted, uniformly across months
+- [x] T089 [P] [US3] `packages/api/tests/dashboard-month.test.ts`: `MONTH_OUT_OF_HORIZON` outside the rolling window; `retrievedAt` present on every response; presentation is a parameter, never server state (FR-030 is client-side)
+- [x] T090 [P] [US3] `apps/web/tests/e2e/us3-dashboard.spec.ts`: category totals and percentages against a known fixture; zero-income month suppresses percentages; month navigation preserves scroll position; no horizontal scrolling at the mobile viewport (FR-035); axe scan
+- [x] T091 [P] [US3] `apps/web/tests/e2e/us3-offline.spec.ts`: the app launches with the network disabled; a previously viewed month renders within 2 s marked with its retrieval time; a month never visited shows "not available offline", distinct from "no data"; a save attempt fails immediately with `OFFLINE_READ_ONLY` and nothing is queued; sign-out destroys every cache (FR-035a–FR-035e, SC-011)
 
 ### Implementation for User Story 3
 
-- [ ] T092 [P] [US3] Implement `packages/core/src/time/activity-window.ts`
-- [ ] T093 [US3] Implement `packages/core/src/dashboard/aggregate.ts` as one pure function over commitments, amounts, overrides, a target month and a presentation, returning the full payload shape from [contracts/procedures.md](./contracts/procedures.md)
-- [ ] T094 [US3] Implement `packages/api/src/routers/dashboard.ts`: `horizon` returning the rolling 24-month window, and `month` loading the workspace's commitment set in **one** query per request and calling T093. No projection row is persisted or cached in the database (research B9)
-- [ ] T095 [P] [US3] Build the dashboard screen in `apps/web/app/(app)/dashboard/`: income list with total, category rows with totals and percentages, overall and remaining figures, all through `packages/ui/Amount`
-- [ ] T096 [P] [US3] Build the month navigator on `.seg` or `.tabs`, stopping at the horizon boundary with a clear indication rather than an empty screen (FR-025 edge case), and preserving the user's scroll position across navigation (Story 3 scenario 4)
-- [ ] T097 [P] [US3] Prefetch the neighbouring months so a month switch is local, meeting the 1 s budget in SC-006
-- [ ] T098 [US3] Implement `apps/web/sw.ts` with Serwist: stale-while-revalidate for query `GET` traffic, an `x-cached-at` header stamped at write time, no cache entry for any mutation, and `health.ping` explicitly excluded — a cached success would report a live server to an offline client ([ADR 0006](../../decisions/0006-offline-read-only-cache.md)). Depends on T017
-- [ ] T099 [US3] Synthesise `OFFLINE_READ_ONLY` in the service worker for any mutation attempted offline, so a save fails immediately instead of hanging to a transport timeout, with the user's typed input left on screen (FR-035c, edge case)
-- [ ] T100 [P] [US3] Build the staleness banner stating when the figures were retrieved, using status styling that touches neither `--color-gain` nor `--color-loss` (research Part C), and the distinct "not available offline" empty state
-- [ ] T101 [P] [US3] Add the PWA manifest and icons so the app is installable and launches without a connection (FR-035a)
-- [ ] T102 [US3] Purge every cache and the persisted tRPC client store on sign-out (FR-035e)
+- [x] T092 [P] [US3] Implement `packages/core/src/time/activity-window.ts`
+- [x] T093 [US3] Implement `packages/core/src/dashboard/aggregate.ts` as one pure function over commitments, amounts, overrides, a target month and a presentation, returning the full payload shape from [contracts/procedures.md](./contracts/procedures.md)
+- [x] T094 [US3] Implement `packages/api/src/routers/dashboard.ts`: `horizon` returning the rolling 24-month window, and `month` loading the workspace's commitment set in **one** query per request and calling T093. No projection row is persisted or cached in the database (research B9)
+- [x] T095 [P] [US3] Build the dashboard screen in `apps/web/app/(app)/dashboard/`: income list with total, category rows with totals and percentages, overall and remaining figures, all through `packages/ui/Amount`
+- [x] T096 [P] [US3] Build the month navigator on `.seg` or `.tabs`, stopping at the horizon boundary with a clear indication rather than an empty screen (FR-025 edge case), and preserving the user's scroll position across navigation (Story 3 scenario 4)
+- [x] T097 [P] [US3] Prefetch the neighbouring months so a month switch is local, meeting the 1 s budget in SC-006
+- [x] T098 [US3] Implement `apps/web/sw.ts` with Serwist: stale-while-revalidate for query `GET` traffic, an `x-cached-at` header stamped at write time, no cache entry for any mutation, and `health.ping` explicitly excluded — a cached success would report a live server to an offline client ([ADR 0006](../../decisions/0006-offline-read-only-cache.md)). Depends on T017
+- [x] T099 [US3] Synthesise `OFFLINE_READ_ONLY` in the service worker for any mutation attempted offline, so a save fails immediately instead of hanging to a transport timeout, with the user's typed input left on screen (FR-035c, edge case)
+- [x] T100 [P] [US3] Build the staleness banner stating when the figures were retrieved, using status styling that touches neither `--color-gain` nor `--color-loss` (research Part C), and the distinct "not available offline" empty state
+- [x] T101 [P] [US3] Add the PWA manifest and icons so the app is installable and launches without a connection (FR-035a)
+- [x] T102 [US3] Purge every cache and the persisted tRPC client store on sign-out (FR-035e)
 
 **Checkpoint**: The product's core value is delivered. A monthly-only planner is usable on a phone, online and offline.
 

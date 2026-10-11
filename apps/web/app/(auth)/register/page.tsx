@@ -87,7 +87,7 @@ export default function RegisterPage() {
   }
 
   useEffect(() => {
-    if (succeeded) router.prefetch("/");
+    if (succeeded) router.prefetch("/dashboard");
   }, [succeeded, router]);
 
   if (succeeded) {

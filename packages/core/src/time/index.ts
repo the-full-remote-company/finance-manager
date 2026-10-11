@@ -8,3 +8,4 @@ export {
   yearMonth,
   type YearMonthParts,
 } from "./year-month.js";
+export { isActiveInMonth } from "./activity-window.js";

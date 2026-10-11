@@ -1,11 +1,15 @@
 /**
- * Activity window and due-month arithmetic, per research.md Part B2/B3.
+ * Due-month arithmetic, per research.md Part B2/B3. The activity window test
+ * itself (`m >= startMonth` and, where an end exists, `m <= endMonth`) lives
+ * in `../time/activity-window.js` — it is a time-domain concept, not a
+ * commitment-specific one.
  *
- * A commitment is active in month `m` when `m >= startMonth` and, where an
- * end month exists, `m <= endMonth`. Due months for a periodic rhythm are
- * `anchor + k * period` for integer `k` (`k` may be negative, which is what
- * lets an anchor predate the start date and still be a legal phase marker).
+ * Due months for a periodic rhythm are `anchor + k * period` for integer `k`
+ * (`k` may be negative, which is what lets an anchor predate the start date
+ * and still be a legal phase marker).
  */
+import { isActiveInMonth } from "../time/activity-window.js";
+
 export type Rhythm = "monthly" | "quarterly" | "half_yearly" | "yearly" | "one_off";
 
 const PERIOD_MONTHS: Readonly<Record<Exclude<Rhythm, "one_off">, number>> = {
@@ -14,16 +18,6 @@ const PERIOD_MONTHS: Readonly<Record<Exclude<Rhythm, "one_off">, number>> = {
   half_yearly: 6,
   yearly: 12,
 };
-
-export function isActiveInMonth(
-  month: number,
-  startMonth: number,
-  endMonth: number | null,
-): boolean {
-  if (month < startMonth) return false;
-  if (endMonth !== null && month > endMonth) return false;
-  return true;
-}
 
 /**
  * Whether `month` is a due month for this rhythm/anchor. Does not itself check

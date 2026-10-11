@@ -1,3 +1,4 @@
+import withSerwistInit from "@serwist/next";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -18,6 +19,15 @@ interface WebpackResolveConfig {
 }
 
 const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
+
+// T098 (ADR 0006): the service worker is only built for a production build —
+// `next dev` never activates one, and `disable` here, not a separate flag,
+// is what keeps the dev server's hot reload from fighting a stale worker.
+const withSerwist = withSerwistInit({
+  swSrc: "sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV !== "production",
+});
 
 /**
  * "Baseline security controls": HTTPS only, HSTS, and a strict
@@ -91,4 +101,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default withSerwist(withNextIntl(nextConfig));

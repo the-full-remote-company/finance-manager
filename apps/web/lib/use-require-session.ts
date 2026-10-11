@@ -31,7 +31,18 @@ export function useRequireSession(): boolean {
         setReady(true);
       })
       .catch(() => {
-        if (!cancelled) router.replace("/sign-in");
+        if (cancelled) return;
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          // Offline support is read-only (ADR 0006): a network failure here
+          // means the device cannot reach the server right now, not that the
+          // session is gone. Redirecting to sign-in would make every cached
+          // dashboard answer (FR-035a) unreachable the moment the device
+          // goes offline. The next successful check still catches a session
+          // that is genuinely dead.
+          setReady(true);
+          return;
+        }
+        router.replace("/sign-in");
       });
 
     return () => {

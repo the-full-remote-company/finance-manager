@@ -2,6 +2,7 @@ import { accountsRouter } from "./routers/accounts.js";
 import { authRouter } from "./routers/auth.js";
 import { categoriesRouter } from "./routers/categories.js";
 import { commitmentsRouter } from "./routers/commitments.js";
+import { dashboardRouter } from "./routers/dashboard.js";
 import { healthRouter } from "./routers/health.js";
 import { router } from "./trpc.js";
 
@@ -16,6 +17,7 @@ export const appRouter = router({
   accounts: accountsRouter,
   categories: categoriesRouter,
   commitments: commitmentsRouter,
+  dashboard: dashboardRouter,
 });
 
 export type AppRouter = typeof appRouter;

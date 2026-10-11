@@ -71,6 +71,9 @@ export default tseslint.config(
       "**/coverage/**",
       "**/node_modules/**",
       "**/playwright-report/**",
+      "apps/web/public/sw.js",
+      "apps/web/public/sw.js.map",
+      "apps/web/public/swe-worker-*.js",
     ],
   },
   js.configs.recommended,
@@ -101,6 +104,19 @@ export default tseslint.config(
     },
     rules: {
       "no-restricted-syntax": ["error", ...COLOUR_SELECTORS],
+    },
+  },
+  {
+    // The service worker builds against `lib: ["webworker"]`, which clashes
+    // with the DOM lib every other file in this app needs — hence its own
+    // tsconfig, outside the project service's auto-discovered set.
+    files: ["apps/web/sw.ts"],
+    languageOptions: {
+      parserOptions: {
+        projectService: false,
+        project: ["apps/web/tsconfig.worker.json"],
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
   {
