@@ -250,20 +250,20 @@ twelve months.
 
 ### Tests for User Story 4 (write first, observe failing)
 
-- [ ] T103 [P] [US4] `packages/core/tests/projection/due-months.test.ts`: period lengths 1, 3, 6, 12; due months are `anchor + k * period` with **negative `k` permitted**, restricted to active months, so an anchor before the start date yields no due month until the first occurrence on or after the start month (FR-029, edge case). `one_off` is due in exactly its anchor month if active, and is never smoothed (Story 4 scenario 7)
-- [ ] T104 [P] [US4] `packages/core/tests/projection/period-window.test.ts`: `periodStart = anchor + floor((m - anchor) / period) * period` with a **true floor, not truncation toward zero**, so months before the anchor land in the correct earlier period — an explicit test case (research B4)
-- [ ] T105 [P] [US4] `packages/core/tests/projection/smoothing.test.ts`: allocate across the full period, then clip to active months (FR-028a). The spec's worked example — quarterly 240,00 € anchored to January, ending in February — yields January 80,00 €, February 80,00 €, March omitted, cash view 240,00 € in January. Smoothed and cash totals are asserted equal **only** over fully covered periods; the partially covered case asserts the documented inequality, never equality (FR-028b)
-- [ ] T106 [P] [US4] `packages/core/tests/projection/exactness.test.ts`: over ≥1 000 generated amount-and-period combinations, the smoothed months of one fully covered period sum to exactly the charge — never a cent gained or lost (SC-002, Story 4 scenario 4)
-- [ ] T107 [P] [US4] `apps/web/tests/e2e/us4-rhythms.spec.ts`: the 66,03 €-quarterly scenario end to end in both presentations; the anchor-missing refusal; the chosen presentation retained across month navigation and across a session restart (FR-030, Story 4 scenario 6); axe scan
+- [x] T103 [P] [US4] `packages/core/tests/projection/due-months.test.ts`: period lengths 1, 3, 6, 12; due months are `anchor + k * period` with **negative `k` permitted**, restricted to active months, so an anchor before the start date yields no due month until the first occurrence on or after the start month (FR-029, edge case). `one_off` is due in exactly its anchor month if active, and is never smoothed (Story 4 scenario 7)
+- [x] T104 [P] [US4] `packages/core/tests/projection/period-window.test.ts`: `periodStart = anchor + floor((m - anchor) / period) * period` with a **true floor, not truncation toward zero**, so months before the anchor land in the correct earlier period — an explicit test case (research B4)
+- [x] T105 [P] [US4] `packages/core/tests/projection/smoothing.test.ts`: allocate across the full period, then clip to active months (FR-028a). The spec's worked example — quarterly 240,00 € anchored to January, ending in February — yields January 80,00 €, February 80,00 €, March omitted, cash view 240,00 € in January. Smoothed and cash totals are asserted equal **only** over fully covered periods; the partially covered case asserts the documented inequality, never equality (FR-028b)
+- [x] T106 [P] [US4] `packages/core/tests/projection/exactness.test.ts`: over ≥1 000 generated amount-and-period combinations, the smoothed months of one fully covered period sum to exactly the charge — never a cent gained or lost (SC-002, Story 4 scenario 4)
+- [x] T107 [P] [US4] `apps/web/tests/e2e/us4-rhythms.spec.ts`: the 66,03 €-quarterly scenario end to end in both presentations; the anchor-missing refusal; the chosen presentation retained across month navigation and across a session restart (FR-030, Story 4 scenario 6); axe scan
 
 ### Implementation for User Story 4
 
-- [ ] T108 [P] [US4] Implement `packages/core/src/projection/rhythm.ts` — period length per rhythm, with `one_off` modelled as a distinct rhythm rather than a period (research B3)
-- [ ] T109 [P] [US4] Implement `packages/core/src/projection/due-months.ts`
-- [ ] T110 [US4] Implement `packages/core/src/projection/period-window.ts` and `smoothing.ts` on `allocate` from T021 — the allocation is never re-derived locally
-- [ ] T111 [US4] Extend T093's aggregation to route each commitment through the cash or smoothed path per the requested presentation, and set `isDue` on every expense line
-- [ ] T112 [P] [US4] Build the presentation toggle on `.seg`, persisted client-side across navigation and sessions, never as server state, so a shared cache entry cannot be poisoned by another device's preference (FR-030)
-- [ ] T113 [P] [US4] Surface the presentation in the UI with an explanation of what a smoothed figure means, since FR-028b makes the two views legitimately disagree over partially covered periods
+- [x] T108 [P] [US4] Implement `packages/core/src/projection/rhythm.ts` — period length per rhythm, with `one_off` modelled as a distinct rhythm rather than a period (research B3)
+- [x] T109 [P] [US4] Implement `packages/core/src/projection/due-months.ts`
+- [x] T110 [US4] Implement `packages/core/src/projection/period-window.ts` and `smoothing.ts` on `allocate` from T021 — the allocation is never re-derived locally
+- [x] T111 [US4] Extend T093's aggregation to route each commitment through the cash or smoothed path per the requested presentation, and set `isDue` on every expense line
+- [x] T112 [P] [US4] Build the presentation toggle on `.seg`, persisted client-side across navigation and sessions, never as server state, so a shared cache entry cannot be poisoned by another device's preference (FR-030)
+- [x] T113 [P] [US4] Surface the presentation in the UI with an explanation of what a smoothed figure means, since FR-028b makes the two views legitimately disagree over partially covered periods
 
 **Checkpoint**: Non-monthly commitments are correct in both presentations. Roughly a sixth of the user's data becomes trustworthy.
 
@@ -280,14 +280,14 @@ total, and that expenses plus reserves equals the previous combined total.
 
 ### Tests for User Story 5 (write first, observe failing)
 
-- [ ] T114 [P] [US5] `packages/core/tests/dashboard/reserves.test.ts`: a reserve contributes to `reservesTotal` and never to `expenseTotal` or to an expense category total (FR-032); a category holding both kinds appears in both lists with the matching subset of lines (Story 5 scenario 2); `expenseTotal + reservesTotal === combinedTotal === the sum of all outgoing commitments` — asserted, not merely intended (Story 5 scenario 3)
-- [ ] T115 [P] [US5] `apps/web/tests/e2e/us5-reserves.spec.ts`: flip a commitment's kind, reopen the dashboard, and assert every affected total moves (Story 5 scenario 4); axe scan
+- [x] T114 [P] [US5] `packages/core/tests/dashboard/reserves.test.ts`: a reserve contributes to `reservesTotal` and never to `expenseTotal` or to an expense category total (FR-032); a category holding both kinds appears in both lists with the matching subset of lines (Story 5 scenario 2); `expenseTotal + reservesTotal === combinedTotal === the sum of all outgoing commitments` — asserted, not merely intended (Story 5 scenario 3)
+- [x] T115 [P] [US5] `apps/web/tests/e2e/us5-reserves.spec.ts`: flip a commitment's kind, reopen the dashboard, and assert every affected total moves (Story 5 scenario 4); axe scan
 
 ### Implementation for User Story 5
 
-- [ ] T116 [US5] Extend T093's aggregation with `reserveCategories`, `reservesTotal` and `combinedTotal`, splitting on `kind`
-- [ ] T117 [P] [US5] Add the reserve/expense control to the commitment form, defaulting to expense (FR-018)
-- [ ] T118 [P] [US5] Build the reserves section on the dashboard, distinguished from expenses by a label and a `.pill`, using neither `--color-gain` nor `--color-loss` — the distinction is status, not money direction (research Part C, FR-043)
+- [x] T116 [US5] Extend T093's aggregation with `reserveCategories`, `reservesTotal` and `combinedTotal`, splitting on `kind`
+- [x] T117 [P] [US5] Add the reserve/expense control to the commitment form, defaulting to expense (FR-018)
+- [x] T118 [P] [US5] Build the reserves section on the dashboard, distinguished from expenses by a label and a `.pill`, using neither `--color-gain` nor `--color-loss` — the distinction is status, not money direction (research Part C, FR-043)
 
 **Checkpoint**: The headline expense figure is no longer overstated by savings.
 

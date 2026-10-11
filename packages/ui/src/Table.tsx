@@ -39,28 +39,36 @@ export function Table<Row>({
   }
 
   return (
-    <table>
-      <caption className="sr-only">{caption}</caption>
-      <thead>
-        <tr>
-          {columns.map((column) => (
-            <th key={column.key} scope="col" style={{ textAlign: column.align ?? "start" }}>
-              {column.header}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row) => (
-          <tr key={getRowKey(row)}>
+    // A table wide enough to need more columns than a phone viewport has
+    // width for scrolls horizontally within this wrapper, rather than
+    // compressing its columns until two cells visually overlap and one
+    // starts intercepting the other's taps — found by an e2e test clicking
+    // a commitment row's action link on a narrow viewport, where the
+    // uncontained table had squeezed the amount column over it.
+    <div style={{ overflowX: "auto" }}>
+      <table>
+        <caption className="sr-only">{caption}</caption>
+        <thead>
+          <tr>
             {columns.map((column) => (
-              <td key={column.key} style={{ textAlign: column.align ?? "start" }}>
-                {column.render(row)}
-              </td>
+              <th key={column.key} scope="col" style={{ textAlign: column.align ?? "start" }}>
+                {column.header}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={getRowKey(row)}>
+              {columns.map((column) => (
+                <td key={column.key} style={{ textAlign: column.align ?? "start" }}>
+                  {column.render(row)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

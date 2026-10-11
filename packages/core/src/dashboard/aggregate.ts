@@ -9,18 +9,27 @@
  * `reserveCategories` / `reservesTotal`. A category holding both kinds of
  * commitment appears in both arrays, each with only its matching lines.
  *
- * Presentation note: `presentation` is accepted now so the contract's shape
- * is stable, but only the `cash` path is implemented here — a commitment's
- * full amount appears exactly in its due months, never prorated (FR-026a),
- * and nowhere else. True smoothing (dividing a charge across its whole
- * rhythm period, FR-027/FR-028) is T111's extension of this same function
- * for User Story 4; until then `smoothed` computes identically to `cash`,
- * which happens to already be correct for every monthly-rhythm commitment
- * since its period is one month.
+ * Presentation (T111, User Story 4): `cash` shows a commitment's full amount
+ * exactly in its due months, never prorated (FR-026a), and nowhere else.
+ * `smoothed` instead shows every *active* month an equal per-month share of
+ * the charge, split across the whole rhythm period rather than however many
+ * of its months are active (FR-028a) — a `one_off` commitment is the one
+ * exception, per Story 4 scenario 7: it is never smoothed, in either
+ * presentation, since it has no period to spread across. For a `monthly`
+ * commitment the two presentations are mathematically identical (period 1),
+ * which is why this distinction was invisible throughout User Story 3.
  */
-import { amountInForce, isDueMonth, type Rhythm } from "../commitment/schedule.js";
+import { amountInForce } from "../commitment/schedule.js";
 import { addMoney, money, subtractMoney, sumMoney, type Money } from "../money/money.js";
 import { percentOfIncome, type ExactRational } from "../money/percentage.js";
+import {
+  isDueMonth,
+  isPeriodic,
+  periodMonths,
+  periodStart,
+  smoothedShareForMonth,
+  type Rhythm,
+} from "../projection/index.js";
 import { isActiveInMonth } from "../time/activity-window.js";
 
 export type Presentation = "cash" | "smoothed";
@@ -159,13 +168,53 @@ function groupByCategory(
   return result;
 }
 
+/**
+ * The resolved figure for one active commitment at `month`, per
+ * `presentation`. `null` when the commitment contributes nothing this
+ * month — the cash view (and a `one_off` in either view) simply has no line
+ * outside its due month.
+ */
+function resolveLine(
+  commitment: AggregateCommitment,
+  month: number,
+  presentation: Presentation,
+  amounts: readonly AggregateAmount[],
+  overrides: readonly AggregateOverride[],
+  currency: string,
+): { amount: Money; isDue: boolean } | null {
+  if (presentation === "cash" || !isPeriodic(commitment.rhythm)) {
+    const due = isDueMonth(month, commitment.rhythm, commitment.anchorMonth);
+    if (!due) return null;
+    const amount = resolveAmount(commitment.id, month, amounts, overrides, currency);
+    if (!amount) return null;
+    return { amount, isDue: true };
+  }
+
+  // Smoothed, periodic rhythm: every active month gets a share, not only the
+  // due month. `anchorMonth` is `null` only for `monthly` (schema-enforced),
+  // whose period is 1 — the anchor value is then mathematically irrelevant
+  // (periodStart(m, anything, 1) === m), so `month` is a safe stand-in.
+  const period = periodMonths(commitment.rhythm);
+  const anchor = commitment.anchorMonth ?? month;
+  const start = periodStart(month, anchor, period);
+  // The due month this period's charge is resolved at. If the period's own
+  // boundary precedes the commitment's start (it started part-way through a
+  // period), there is no amount history before the start month — the
+  // creation invariant only guarantees one at-or-before the start itself.
+  const amountLookupMonth = Math.max(start, commitment.startMonth);
+  const dueAmount = resolveAmount(commitment.id, amountLookupMonth, amounts, overrides, currency);
+  if (!dueAmount) return null;
+
+  const shareMinor = smoothedShareForMonth(month, start, period, dueAmount.minor);
+  return { amount: money(shareMinor, dueAmount.currency), isDue: month === start };
+}
+
 export function aggregateMonth(input: AggregateInput): DashboardMonth {
   const { month, presentation, currency, commitments, amounts, overrides } = input;
 
   const incomeLines: IncomeLine[] = [];
-  // commitmentId -> resolved line, restricted to active-and-due commitments
-  // (FR-026: only whole active months count; the cash view shows a charge
-  // only in its due months).
+  // commitmentId -> resolved line, restricted to active commitments with a
+  // non-null figure this month (FR-026: only whole active months count).
   const expenseResolved = new Map<string, { amount: Money; isDue: boolean }>();
   const reserveResolved = new Map<string, { amount: Money; isDue: boolean }>();
 
@@ -173,23 +222,20 @@ export function aggregateMonth(input: AggregateInput): DashboardMonth {
     const active = isActiveInMonth(month, commitment.startMonth, commitment.endMonth);
     if (!active) continue;
 
-    const due = isDueMonth(month, commitment.rhythm, commitment.anchorMonth);
-    if (!due) continue;
-
-    const amount = resolveAmount(commitment.id, month, amounts, overrides, currency);
-    if (!amount) continue;
+    const resolved = resolveLine(commitment, month, presentation, amounts, overrides, currency);
+    if (!resolved) continue;
 
     if (commitment.direction === "income") {
       incomeLines.push({
         commitmentId: commitment.id,
         name: commitment.name,
         categoryId: commitment.categoryId,
-        amount,
+        amount: resolved.amount,
       });
     } else if (commitment.kind === "reserve") {
-      reserveResolved.set(commitment.id, { amount, isDue: due });
+      reserveResolved.set(commitment.id, resolved);
     } else {
-      expenseResolved.set(commitment.id, { amount, isDue: due });
+      expenseResolved.set(commitment.id, resolved);
     }
   }
 

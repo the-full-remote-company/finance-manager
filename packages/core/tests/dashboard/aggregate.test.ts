@@ -354,4 +354,227 @@ describe("aggregateMonth", () => {
     });
     expect(result.expenseCategories[0]?.lines[0]?.isDue).toBe(true);
   });
+
+  describe("presentation (T111, User Story 4)", () => {
+    const quarterly = commitment({
+      id: "insurance",
+      name: "Versicherung",
+      rhythm: "quarterly",
+      anchorMonth: parseMonth("2026-01"),
+      categoryId: "insurance",
+      categoryName: "Versicherung",
+    });
+    const quarterlyAmounts = [
+      {
+        commitmentId: "insurance",
+        effectiveMonth: parseMonth("2025-01"),
+        amountMinor: 6603n,
+        currency: "EUR",
+      },
+    ];
+
+    it("cash: the full charge appears only in the due month (spec's worked example)", () => {
+      const jan = aggregateMonth({
+        month: JAN_2026,
+        presentation: "cash",
+        currency: "EUR",
+        commitments: [quarterly],
+        amounts: quarterlyAmounts,
+        overrides: [],
+      });
+      expect(jan.expenseTotal).toEqual({ minor: 6603n, currency: "EUR" });
+
+      const feb = aggregateMonth({
+        month: parseMonth("2026-02"),
+        presentation: "cash",
+        currency: "EUR",
+        commitments: [quarterly],
+        amounts: quarterlyAmounts,
+        overrides: [],
+      });
+      expect(feb.expenseTotal).toEqual({ minor: 0n, currency: "EUR" });
+    });
+
+    it("smoothed: one third of the charge appears in every active month, including non-due ones (FR-028a)", () => {
+      for (const month of ["2026-01", "2026-02", "2026-03"]) {
+        const result = aggregateMonth({
+          month: parseMonth(month),
+          presentation: "smoothed",
+          currency: "EUR",
+          commitments: [quarterly],
+          amounts: quarterlyAmounts,
+          overrides: [],
+        });
+        expect(result.expenseTotal, month).toEqual({ minor: 2201n, currency: "EUR" });
+      }
+    });
+
+    it("isDue is true only at the real due month, even in the smoothed view", () => {
+      const jan = aggregateMonth({
+        month: JAN_2026,
+        presentation: "smoothed",
+        currency: "EUR",
+        commitments: [quarterly],
+        amounts: quarterlyAmounts,
+        overrides: [],
+      });
+      expect(jan.expenseCategories[0]?.lines[0]?.isDue).toBe(true);
+
+      const feb = aggregateMonth({
+        month: parseMonth("2026-02"),
+        presentation: "smoothed",
+        currency: "EUR",
+        commitments: [quarterly],
+        amounts: quarterlyAmounts,
+        overrides: [],
+      });
+      expect(feb.expenseCategories[0]?.lines[0]?.isDue).toBe(false);
+    });
+
+    it("a one-off is never smoothed (Story 4 scenario 7): identical in both presentations", () => {
+      const oneOff = commitment({
+        id: "bonus-payout",
+        rhythm: "one_off",
+        anchorMonth: JAN_2026,
+        categoryId: "oneoff",
+        categoryName: "Einmalig",
+      });
+      const oneOffAmounts = [
+        {
+          commitmentId: "bonus-payout",
+          effectiveMonth: parseMonth("2025-01"),
+          amountMinor: 12000n,
+          currency: "EUR",
+        },
+      ];
+
+      for (const presentation of ["cash", "smoothed"] as const) {
+        const jan = aggregateMonth({
+          month: JAN_2026,
+          presentation,
+          currency: "EUR",
+          commitments: [oneOff],
+          amounts: oneOffAmounts,
+          overrides: [],
+        });
+        expect(jan.expenseTotal, presentation).toEqual({ minor: 12000n, currency: "EUR" });
+
+        const feb = aggregateMonth({
+          month: parseMonth("2026-02"),
+          presentation,
+          currency: "EUR",
+          commitments: [oneOff],
+          amounts: oneOffAmounts,
+          overrides: [],
+        });
+        expect(feb.expenseTotal, presentation).toEqual({ minor: 0n, currency: "EUR" });
+      }
+    });
+
+    it("the spec's partially-covered-period example: 240,00 € quarterly anchored January, ending February", () => {
+      const endingEarly = commitment({
+        id: "short-contract",
+        rhythm: "quarterly",
+        anchorMonth: JAN_2026,
+        endMonth: parseMonth("2026-02"),
+        categoryId: "housing",
+        categoryName: "Wohnen",
+      });
+      const amounts = [
+        {
+          commitmentId: "short-contract",
+          effectiveMonth: parseMonth("2025-01"),
+          amountMinor: 24000n,
+          currency: "EUR",
+        },
+      ];
+
+      const smoothedJan = aggregateMonth({
+        month: JAN_2026,
+        presentation: "smoothed",
+        currency: "EUR",
+        commitments: [endingEarly],
+        amounts,
+        overrides: [],
+      });
+      expect(smoothedJan.expenseTotal).toEqual({ minor: 8000n, currency: "EUR" });
+
+      const smoothedFeb = aggregateMonth({
+        month: parseMonth("2026-02"),
+        presentation: "smoothed",
+        currency: "EUR",
+        commitments: [endingEarly],
+        amounts,
+        overrides: [],
+      });
+      expect(smoothedFeb.expenseTotal).toEqual({ minor: 8000n, currency: "EUR" });
+
+      // March: inactive (the contract ended in February), omitted entirely —
+      // the smoothed total for this period (16000) is therefore less than
+      // the charge (24000), per FR-028b.
+      const smoothedMar = aggregateMonth({
+        month: parseMonth("2026-03"),
+        presentation: "smoothed",
+        currency: "EUR",
+        commitments: [endingEarly],
+        amounts,
+        overrides: [],
+      });
+      expect(smoothedMar.expenseTotal).toEqual({ minor: 0n, currency: "EUR" });
+
+      // The cash view still shows the full 240,00 € in January.
+      const cashJan = aggregateMonth({
+        month: JAN_2026,
+        presentation: "cash",
+        currency: "EUR",
+        commitments: [endingEarly],
+        amounts,
+        overrides: [],
+      });
+      expect(cashJan.expenseTotal).toEqual({ minor: 24000n, currency: "EUR" });
+    });
+
+    it("a commitment starting part-way through a period still gets a smoothed share, using its own start month's amount (edge case)", () => {
+      // The commitment starts in February, inside a Jan-Mar quarterly
+      // period anchored to January — there is no amount history before
+      // February, so the period's "due amount" resolves at the start month.
+      const startsLate = commitment({
+        id: "late-start",
+        rhythm: "quarterly",
+        anchorMonth: JAN_2026,
+        startMonth: parseMonth("2026-02"),
+        categoryId: "housing",
+        categoryName: "Wohnen",
+      });
+      const amounts = [
+        {
+          commitmentId: "late-start",
+          effectiveMonth: parseMonth("2026-02"),
+          amountMinor: 9000n,
+          currency: "EUR",
+        },
+      ];
+
+      const cashJan = aggregateMonth({
+        month: JAN_2026,
+        presentation: "cash",
+        currency: "EUR",
+        commitments: [startsLate],
+        amounts,
+        overrides: [],
+      });
+      // Inactive in January: nothing in the cash view for that period at all.
+      expect(cashJan.expenseTotal).toEqual({ minor: 0n, currency: "EUR" });
+
+      const smoothedFeb = aggregateMonth({
+        month: parseMonth("2026-02"),
+        presentation: "smoothed",
+        currency: "EUR",
+        commitments: [startsLate],
+        amounts,
+        overrides: [],
+      });
+      expect(smoothedFeb.expenseTotal).toEqual({ minor: 3000n, currency: "EUR" });
+    });
+  });
 });

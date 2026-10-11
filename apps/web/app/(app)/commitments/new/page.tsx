@@ -8,6 +8,7 @@ import { toAppClientError, trpc } from "../../../../lib/trpc/browser.js";
 import { useRequireSession } from "../../../../lib/use-require-session.js";
 
 type Direction = "income" | "expense";
+type Kind = "expense" | "reserve";
 type Rhythm = "monthly" | "quarterly" | "half_yearly" | "yearly" | "one_off";
 
 interface Option {
@@ -31,6 +32,11 @@ export default function NewCommitmentPage() {
 
   const [name, setName] = useState("");
   const [direction, setDirection] = useState<Direction>("expense");
+  // FR-018: classified as either an expense or a reserve, defaulting to
+  // expense. Story 5's distinction (money spent vs. money set aside) only
+  // applies to money leaving an account, so the control is shown for an
+  // expense-direction commitment only — forced back to "expense" otherwise.
+  const [kind, setKind] = useState<Kind>("expense");
   const [categoryId, setCategoryId] = useState("");
   const [sourceAccountId, setSourceAccountId] = useState("");
   const [transferAccountId, setTransferAccountId] = useState("");
@@ -69,7 +75,7 @@ export default function NewCommitmentPage() {
       await trpc.commitments.create.mutate({
         name,
         direction,
-        kind: "expense",
+        kind,
         categoryId,
         sourceAccountId,
         transferAccountId: transferAccountId.length > 0 ? transferAccountId : undefined,
@@ -130,13 +136,30 @@ export default function NewCommitmentPage() {
         label={t("directionLabel")}
         value={direction}
         onChange={(value) => {
-          setDirection(value === "income" ? "income" : "expense");
+          const next = value === "income" ? "income" : "expense";
+          setDirection(next);
+          if (next === "income") setKind("expense");
         }}
         options={[
           { value: "expense", label: t("directionExpense") },
           { value: "income", label: t("directionIncome") },
         ]}
       />
+
+      {direction === "expense" && (
+        <Select
+          id="commitment-kind"
+          label={t("kindLabel")}
+          value={kind}
+          onChange={(value) => {
+            setKind(value === "reserve" ? "reserve" : "expense");
+          }}
+          options={[
+            { value: "expense", label: t("kindExpense") },
+            { value: "reserve", label: t("kindReserve") },
+          ]}
+        />
+      )}
 
       <Select
         id="commitment-category"

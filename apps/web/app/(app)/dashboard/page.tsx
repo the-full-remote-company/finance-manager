@@ -229,6 +229,13 @@ export default function DashboardPage() {
           {t("presentationSmoothed")}
         </button>
       </div>
+      {/* T113: FR-028b means the two views can legitimately disagree over a
+          partially covered period — explained once, near the toggle that
+          switches between them, rather than left for the user to notice as
+          an apparent inconsistency. */}
+      <p>
+        {presentation === "smoothed" ? t("presentationSmoothedHint") : t("presentationCashHint")}
+      </p>
 
       <div className="seg" role="group" aria-label={t("monthNavLabel")} data-testid="month-nav">
         <button
@@ -368,6 +375,11 @@ export default function DashboardPage() {
                   <div className="row" key={category.categoryId}>
                     <div className="row__main">
                       <div className="row__t">{category.name}</div>
+                      {/* T118: a reserve is money set aside, not spent —
+                          status, not money direction, so this is a `.pill`
+                          with neither `--gain` nor `--loss` (research Part C,
+                          Article V). */}
+                      <span className="pill">{t("reservePillLabel")}</span>
                     </div>
                     <Amount
                       value={{

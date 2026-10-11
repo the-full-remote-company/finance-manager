@@ -1,62 +1,9 @@
 /**
- * Due-month arithmetic, per research.md Part B2/B3. The activity window test
- * itself (`m >= startMonth` and, where an end exists, `m <= endMonth`) lives
- * in `../time/activity-window.js` — it is a time-domain concept, not a
- * commitment-specific one.
- *
- * Due months for a periodic rhythm are `anchor + k * period` for integer `k`
- * (`k` may be negative, which is what lets an anchor predate the start date
- * and still be a legal phase marker).
+ * The amount-history lookup for a commitment, per research.md Part B6.
+ * Due-month and rhythm arithmetic moved to `../projection/` (US4): those are
+ * about the projection, not a commitment's amount history, which is the one
+ * thing left here.
  */
-import { isActiveInMonth } from "../time/activity-window.js";
-
-export type Rhythm = "monthly" | "quarterly" | "half_yearly" | "yearly" | "one_off";
-
-const PERIOD_MONTHS: Readonly<Record<Exclude<Rhythm, "one_off">, number>> = {
-  monthly: 1,
-  quarterly: 3,
-  half_yearly: 6,
-  yearly: 12,
-};
-
-/**
- * Whether `month` is a due month for this rhythm/anchor. Does not itself check
- * activity — callers combine this with `isActiveInMonth`, per B3's "restricted
- * to months where the commitment is active".
- */
-export function isDueMonth(month: number, rhythm: Rhythm, anchorMonth: number | null): boolean {
-  if (rhythm === "monthly") return true;
-  if (anchorMonth === null) {
-    // The database's `commitments_anchor_required` CHECK forbids this state;
-    // reached only if a caller bypasses it. No due month is the safe answer.
-    return false;
-  }
-  if (rhythm === "one_off") return month === anchorMonth;
-
-  const period = PERIOD_MONTHS[rhythm];
-  // A true modulo, not JavaScript's remainder: (month - anchor) is negative
-  // for every month before the anchor, and floor-style wrapping is what keeps
-  // those months landing on the correct earlier period boundary (B4).
-  return (((month - anchorMonth) % period) + period) % period === 0;
-}
-
-/** Every due month for a commitment within `[from, to]`, inclusive, restricted to its active months. */
-export function dueMonthsInRange(
-  from: number,
-  to: number,
-  rhythm: Rhythm,
-  anchorMonth: number | null,
-  startMonth: number,
-  endMonth: number | null,
-): number[] {
-  const months: number[] = [];
-  for (let month = from; month <= to; month += 1) {
-    if (isActiveInMonth(month, startMonth, endMonth) && isDueMonth(month, rhythm, anchorMonth)) {
-      months.push(month);
-    }
-  }
-  return months;
-}
 
 export interface EffectiveDatedAmount {
   readonly effectiveMonth: number;

@@ -62,6 +62,15 @@ export default function CommitmentsPage() {
         />
       ),
     },
+    {
+      key: "actions",
+      header: t("columnActions"),
+      render: (row) => (
+        <Link href={`/commitments/${row.id}`} className="btn btn--ghost">
+          {t("editAction")}
+        </Link>
+      ),
+    },
   ];
 
   if (!ready || !loaded) return null;

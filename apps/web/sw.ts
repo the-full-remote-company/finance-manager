@@ -34,12 +34,16 @@ declare const self: ServiceWorkerGlobalScope;
  *    network and, only if that fails, answered immediately with
  *    `OFFLINE_READ_ONLY` rather than left to hang to a transport timeout
  *    (FR-035c/d). Nothing is queued: there is no write queue in this release
- *    (research, decisions/0006).
+ *    (research, decisions/0006). A mutation that *succeeds* online instead
+ *    drops the whole dashboard cache outright (no narrower invalidation
+ *    signal is available here), so an edit is never followed by a stale
+ *    dashboard read of its own change.
  */
 
 const TRPC_PREFIX = "/api/trpc/";
 const DASHBOARD_QUERY_PREFIX = "/api/trpc/dashboard.";
 const HEALTH_PATH = "/api/trpc/health.ping";
+const DASHBOARD_CACHE_NAME = "dashboard-queries";
 
 /** Stamps the response actually written to the runtime cache with its retrieval time. */
 const stampCachedAt: SerwistPlugin = {
@@ -85,7 +89,17 @@ async function handleMutation({ request, url }: RouteHandlerCallbackOptions): Pr
   try {
     // A real attempt, not a `navigator.onLine` guess: the only signal that
     // cannot lie is the network itself refusing the request.
-    return await fetch(request.clone());
+    const response = await fetch(request.clone());
+    // Any successful mutation can change what a cached dashboard answer
+    // would show (a renamed category, a flipped commitment kind, a new
+    // amount) and there is no narrower invalidation signal available here —
+    // the SW does not parse tRPC payloads to know which month was affected.
+    // Dropping the whole cache is the honest trade: a page reload refetches
+    // fresh, a stale-looking dashboard after an edit does not. Found by an
+    // e2e test: editing a commitment's kind and immediately reopening the
+    // dashboard still showed the pre-edit figures from this exact cache.
+    if (response.ok) await caches.delete(DASHBOARD_CACHE_NAME);
+    return response;
   } catch {
     const path = url.pathname.slice(TRPC_PREFIX.length) || url.pathname;
     return offlineReadOnlyResponse(path);
@@ -131,7 +145,7 @@ const serwist = new Serwist({
       method: "GET",
       matcher: ({ url }) => url.pathname.startsWith(DASHBOARD_QUERY_PREFIX),
       handler: new StaleWhileRevalidate({
-        cacheName: "dashboard-queries",
+        cacheName: DASHBOARD_CACHE_NAME,
         plugins: [stampCachedAt],
       }),
     },
