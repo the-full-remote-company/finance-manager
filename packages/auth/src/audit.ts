@@ -14,7 +14,14 @@ import { sql, type Database } from "@finance/db";
  */
 
 export type AuditEventType =
-  "sign_in_succeeded" | "sign_in_failed" | "signed_out" | "export_performed" | "account_deleted";
+  | "sign_in_succeeded"
+  | "sign_in_failed"
+  | "signed_out"
+  | "export_performed"
+  | "account_deleted"
+  | "account_confirmed"
+  | "confirmation_resent"
+  | "confirmation_failed";
 
 /**
  * The complete set of keys permitted in `detail`. All are non-identifying.

@@ -17,3 +17,11 @@ export {
   type AuditEventInput,
   type AuditEventType,
 } from "./audit.js";
+export {
+  composeConfirmToken,
+  issueConfirmToken,
+  parseConfirmToken,
+  verifyConfirmToken,
+  supersedePreviousTokens,
+} from "./confirm-token.js";
+export { sendConfirmationEmail } from "./email.js";
