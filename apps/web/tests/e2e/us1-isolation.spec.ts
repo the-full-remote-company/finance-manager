@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { expectNoSeriousA11yViolations } from "../support/a11y.js";
+import { registerAndConfirmViaApi } from "../support/account.js";
 
 /**
  * Story 1 scenario 2, FR-003: "user A requests user B's identifier through
@@ -22,16 +23,7 @@ interface Registered {
 }
 
 async function registerAndSetUp(request: APIRequestContext, email: string): Promise<Registered> {
-  const register = await request.post("/api/trpc/auth.register", {
-    data: { email, password: "correct horse battery", displayName: "Isolation Test" },
-  });
-  expect(register.ok(), await register.text()).toBe(true);
-  const registerBody = (await register.json()) as { result: { data: { workspaceId: string } } };
-  const setCookie = register.headers()["set-cookie"] ?? "";
-  const cookie = setCookie.split(";")[0] ?? "";
-  if (!cookie.startsWith("__Host-session=")) {
-    throw new Error(`no session cookie in response: ${setCookie}`);
-  }
+  const { cookie, workspaceId } = await registerAndConfirmViaApi(request, email, "Isolation Test");
 
   const account = await request.post("/api/trpc/accounts.create", {
     headers: { cookie },
@@ -65,7 +57,7 @@ async function registerAndSetUp(request: APIRequestContext, email: string): Prom
 
   return {
     cookie,
-    workspaceId: registerBody.result.data.workspaceId,
+    workspaceId,
     accountId: accountBody.result.data.id,
     categoryId: categoryBody.result.data.id,
     commitmentId: commitmentBody.result.data.id,

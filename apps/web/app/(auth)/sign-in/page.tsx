@@ -26,6 +26,8 @@ export default function SignInPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (retryAfterSeconds === null || retryAfterSeconds <= 0) return;
@@ -59,6 +61,10 @@ export default function SignInPage() {
         // naming one would itself be the disclosure.
         setFormError(tErrors("authFailed"));
         passwordRef.current?.focus();
+      } else if (appError?.appCode === "ACCOUNT_NOT_CONFIRMED") {
+        // Feature 002: account exists but email not yet confirmed
+        setUnconfirmedEmail(email);
+        setFormError(tErrors("accountNotConfirmed"));
       } else if (appError?.appCode === "VALIDATION_FAILED") {
         setFormError(tErrors("validationFailed"));
         emailRef.current?.focus();
@@ -77,6 +83,29 @@ export default function SignInPage() {
   }
 
   const throttled = retryAfterSeconds !== null && retryAfterSeconds > 0;
+
+  async function handleResendConfirmation() {
+    if (!unconfirmedEmail) return;
+    setResending(true);
+    try {
+      await trpc.auth.resendConfirmation.mutate({ email: unconfirmedEmail });
+      // Replaces the stale "not confirmed" message so the result is visible,
+      // not only announced.
+      setFormError(t("resendSuccess"));
+      announce(t("resendSuccess"));
+      setUnconfirmedEmail(null);
+    } catch (error) {
+      const appError = toAppClientError(error);
+      if (appError?.appCode === "RATE_LIMITED") {
+        const seconds = Number(appError.details?.["retryAfterSeconds"] ?? 0);
+        announce(tErrors("rateLimited", { seconds }));
+      } else {
+        announce(tErrors("generic"));
+      }
+    } finally {
+      setResending(false);
+    }
+  }
 
   return (
     <form onSubmit={(event) => void handleSubmit(event)} noValidate>
@@ -112,7 +141,21 @@ export default function SignInPage() {
         />
       </div>
 
-      {formError === null ? null : <p role="alert">{formError}</p>}
+      {formError === null ? null : (
+        <div role="alert">
+          <p>{formError}</p>
+          {unconfirmedEmail && (
+            <button
+              type="button"
+              className="btn btn--secondary btn--block"
+              onClick={() => void handleResendConfirmation()}
+              disabled={resending}
+            >
+              {resending ? t("resendingButton") : t("resendButton")}
+            </button>
+          )}
+        </div>
+      )}
 
       <button
         type="submit"

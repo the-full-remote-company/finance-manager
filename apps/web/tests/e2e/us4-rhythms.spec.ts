@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { expectNoSeriousA11yViolations } from "../support/a11y.js";
+import { registerAndConfirm } from "../support/account.js";
 
 /**
  * Story 4, Independent Test: "Enter a quarterly commitment of 66,03 €
@@ -10,13 +11,7 @@ import { expectNoSeriousA11yViolations } from "../support/a11y.js";
  */
 
 async function registerFreshUser(page: Page, label: string): Promise<void> {
-  const email = `rhythms-${label}-${String(Date.now())}@example.test`;
-  await page.goto("/register");
-  await page.getByLabel("Anzeigename").fill("Rhythms Test");
-  await page.getByLabel("E-Mail-Adresse").fill(email);
-  await page.getByLabel("Passwort").fill("correct horse battery");
-  await page.getByRole("button", { name: "Konto erstellen" }).click();
-  await page.getByText("Fast geschafft").first().waitFor();
+  await registerAndConfirm(page, { prefix: "rhythms", label, displayName: "Rhythms Test" });
 }
 
 function currentMonth(): { date: string; month: string } {

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { expectNoSeriousA11yViolations } from "../support/a11y.js";
+import { registerAndConfirm } from "../support/account.js";
 
 /**
  * Story 2, Independent Test: "Enter one income and one expense, reopen the
@@ -14,16 +15,7 @@ async function registerFreshUser(
   page: import("@playwright/test").Page,
   label: string,
 ): Promise<void> {
-  const email = `capture-${label}-${String(Date.now())}@example.test`;
-  await page.goto("/register");
-  await page.getByLabel("Anzeigename").fill("Capture Test");
-  await page.getByLabel("E-Mail-Adresse").fill(email);
-  await page.getByLabel("Passwort").fill("correct horse battery");
-  await page.getByRole("button", { name: "Konto erstellen" }).click();
-  // Matches both the page's own <p role="status"> and the app shell's
-  // #live-region, which the same announce() call also writes into — both
-  // correct, so the first match is enough to confirm the state transitioned.
-  await page.getByText("Fast geschafft").first().waitFor();
+  await registerAndConfirm(page, { prefix: "capture", label, displayName: "Capture Test" });
 }
 
 test.describe("US2: capture what I am committed to (Story 2)", () => {

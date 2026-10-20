@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { registerAndConfirm } from "../support/account.js";
 
 /**
  * Story 3 scenarios 7–8, FR-035a–FR-035e, SC-011 (T091): the app launches
@@ -9,13 +10,7 @@ import { expect, test, type Page } from "@playwright/test";
  */
 
 async function registerFreshUser(page: Page, label: string): Promise<void> {
-  const email = `offline-${label}-${String(Date.now())}@example.test`;
-  await page.goto("/register");
-  await page.getByLabel("Anzeigename").fill("Offline Test");
-  await page.getByLabel("E-Mail-Adresse").fill(email);
-  await page.getByLabel("Passwort").fill("correct horse battery");
-  await page.getByRole("button", { name: "Konto erstellen" }).click();
-  await page.getByText("Fast geschafft").first().waitFor();
+  await registerAndConfirm(page, { prefix: "offline", label, displayName: "Offline Test" });
 }
 
 async function setUpWorkspace(page: Page): Promise<void> {

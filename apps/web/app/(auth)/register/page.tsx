@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, type SubmitEvent } from "react";
 import { toAppClientError, trpc } from "../../../lib/trpc/browser.js";
@@ -15,7 +14,6 @@ import { toAppClientError, trpc } from "../../../lib/trpc/browser.js";
 export default function RegisterPage() {
   const t = useTranslations("auth.register");
   const tErrors = useTranslations("auth.errors");
-  const router = useRouter();
 
   const displayNameId = useId();
   const emailId = useId();
@@ -33,6 +31,8 @@ export default function RegisterPage() {
   const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendFeedback, setResendFeedback] = useState<string | null>(null);
 
   // The throttle countdown, announced via the live region layout.tsx renders
   // (Article IV: the countdown must be perceivable, not just visible).
@@ -59,7 +59,7 @@ export default function RegisterPage() {
     try {
       await trpc.auth.register.mutate({ displayName, email, password });
       setSucceeded(true);
-      announce(t("success"));
+      announce(t("successTitle"));
     } catch (error) {
       const appError = toAppClientError(error);
 
@@ -86,12 +86,54 @@ export default function RegisterPage() {
     }
   }
 
-  useEffect(() => {
-    if (succeeded) router.prefetch("/dashboard");
-  }, [succeeded, router]);
+  async function handleResend() {
+    if (!email) return;
+    setResending(true);
+    setResendFeedback(null);
+
+    // Shown on screen as well as announced: the live region alone gives a
+    // sighted person no sign that anything happened.
+    let message: string;
+    try {
+      await trpc.auth.resendConfirmation.mutate({ email });
+      message = t("resendSuccess");
+    } catch (error) {
+      const appError = toAppClientError(error);
+      message =
+        appError?.appCode === "RATE_LIMITED"
+          ? tErrors("rateLimited", {
+              seconds: Number(appError.details?.["retryAfterSeconds"] ?? 0),
+            })
+          : tErrors("generic");
+    } finally {
+      setResending(false);
+    }
+    setResendFeedback(message);
+    announce(message);
+  }
 
   if (succeeded) {
-    return <p role="status">{t("success")}</p>;
+    return (
+      <div>
+        <h1>{t("successTitle")}</h1>
+        <p>{t("successMessage")}</p>
+        <p>
+          <strong>{email}</strong>
+        </p>
+        {resendFeedback === null ? null : <p role="status">{resendFeedback}</p>}
+        <button
+          type="button"
+          className="btn btn--primary btn--block"
+          onClick={() => void handleResend()}
+          disabled={resending}
+        >
+          {resending ? t("resendingButton") : t("resendButton")}
+        </button>
+        <p>
+          <Link href="/sign-in">{t("switchToSignIn")}</Link>
+        </p>
+      </div>
+    );
   }
 
   const throttled = retryAfterSeconds !== null && retryAfterSeconds > 0;

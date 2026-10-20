@@ -20,7 +20,23 @@
       "submit": "Konto erstellen",
       "submitting": "Konto wird erstellt …",
       "switchToSignIn": "Bereits registriert? Anmelden.",
-      "success": "Fast geschafft: Bitte E-Mails prüfen, um die Registrierung abzuschließen."
+      "successTitle": "Bestätigungslink wurde versendet",
+      "successMessage": "Prüfen Sie Ihre Mailbox und klicken Sie auf den Bestätigungslink, um die Registrierung abzuschließen.",
+      "resendButton": "Bestätigungs-E-Mail erneut senden",
+      "resendingButton": "Wird versendet …",
+      "resendSuccess": "Neue Bestätigungs-E-Mail wurde versendet."
+    },
+    "confirm": {
+      "title": "E-Mail-Adresse bestätigen",
+      "instructions": "Klicken Sie auf die Schaltfläche unten, um Ihr Konto zu bestätigen.",
+      "confirmButton": "Konto bestätigen",
+      "confirming": "Wird bestätigt …",
+      "confirmedMessage": "Ihr Konto wurde bestätigt. Sie werden weitergeleitet.",
+      "resendEmailLabel": "E-Mail-Adresse für einen neuen Link",
+      "resendButton": "Bestätigungs-E-Mail erneut senden",
+      "resendingButton": "Wird gesendet …",
+      "resendSent": "Falls zu dieser Adresse ein unbestätigtes Konto existiert, wurde ein neuer Link gesendet.",
+      "switchToSignIn": "Zurück zur Anmeldung"
     },
     "signIn": {
       "title": "Anmelden",
@@ -28,11 +44,17 @@
       "passwordLabel": "Passwort",
       "submit": "Anmelden",
       "submitting": "Anmeldung läuft …",
-      "switchToRegister": "Noch kein Konto? Registrieren."
+      "switchToRegister": "Noch kein Konto? Registrieren.",
+      "resendButton": "Bestätigungs-E-Mail erneut senden",
+      "resendingButton": "Wird versendet …",
+      "resendSuccess": "Bestätigungs-E-Mail wurde versendet."
     },
     "errors": {
       "validationFailed": "Bitte die markierten Felder prüfen.",
       "authFailed": "Anmeldung fehlgeschlagen. E-Mail-Adresse oder Passwort ist falsch.",
+      "accountNotConfirmed": "Dieses Konto wurde noch nicht bestätigt. Prüfen Sie Ihre E-Mails auf den Bestätigungslink.",
+      "tokenInvalid": "Ungültiger oder abgelaufener Bestätigungslink.",
+      "alreadyConfirmed": "Dieses Konto wurde bereits bestätigt.",
       "rateLimited": "Zu viele Versuche. Bitte in {seconds} Sekunden erneut versuchen.",
       "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
     }
