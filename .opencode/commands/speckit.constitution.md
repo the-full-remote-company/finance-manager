@@ -1,4 +1,5 @@
 ---
+model: anthropic/claude-haiku-4-5
 description: Create or update the project constitution from interactive or provided principle inputs.
 handoffs:
   - label: Build Specification
