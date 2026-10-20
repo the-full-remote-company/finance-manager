@@ -412,6 +412,7 @@ any store.
 - [ ] T160 **SC-003 acceptance**: reconcile the transfer list for that month against the amounts the user currently transfers by hand, excluding destinations that depend on a second person's share or whose current figure the user deliberately rounds up to whole euros — that buffer rounding is explicitly out of scope
 - [ ] T161 **SC-010 acceptance**: the user completes one full month of planning without opening the spreadsheet. This is the feature's real exit criterion; every other measure is a proxy for it
 - [ ] T162 Write the pull request description stating which articles the feature touches and how each is satisfied, per "Pull requests". A PR changing a monetary calculation, an RLS policy or an authentication path requires human review that must not be waived on the grounds that tests pass
+- [ ] T163 [US3] `contracts/errors.md` says the UI answers `OFFLINE_READ_ONLY` with a "requires a connection" message (FR-035d). No screen handles that code: an offline save shows the generic "Etwas ist schiefgelaufen" instead. Found because the e2e test that claimed to verify it asserted only that some `role="alert"` existed (see 002 T061). Add the message to `de.json` and handle the code on every mutating form, then make `us3-offline` assert the text
 
 ---
 

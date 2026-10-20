@@ -191,14 +191,16 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 - [x] T056 T008/T009 were unreachable (`*.test.ts` matches no Vitest project; the convention is `*.unit.test.ts`) and T009 was placeholders. Renamed, rewritten as real tests, and fixed what they found: `email.ts` logged the recipient's address (Article VIII), and had no SMTP timeouts, so one stalled socket hung registration for 75 s
 - [ ] T057 Enumeration timing (belongs with US3, T029): on a genuine registration the request does extra work (token insert, SMTP send) that a duplicate registration does not, so the two are not yet in the same timing class (ADR 0003). Decide between not awaiting the send and padding the duplicate path, then assert it
 - [ ] T058 `contracts/errors.md` says a link used twice returns `ALREADY_CONFIRMED`; spec scenario 4, FR-007 and `procedures.md` say `TOKEN_INVALID`, and the implementation (single-use, token deleted) follows the spec. `ALREADY_CONFIRMED` is therefore only reachable when an account is confirmed by other means while a token is still live. Reconcile the contract text, or drop the code
-- [ ] T059 The `e2e` job in `.github/workflows/ci.yml` started PostgreSQL only, but every e2e spec registers through the email flow and reads the mail back from Mailpit. Added a pinned Mailpit service with a health check and the `SMTP_*` and `APP_BASE_URL` env to that job. **Stays open until CI has run it**: the workflow triggers on pull requests and pushes to `main`, so a push to a feature branch does not exercise it
+- [x] T059 The `e2e` job in `.github/workflows/ci.yml` started PostgreSQL only, but every e2e spec registers through the email flow and reads the mail back from Mailpit. Added a pinned Mailpit service with a health check and the `SMTP_*` and `APP_BASE_URL` env to that job. Confirmed by the first CI run: registration, confirmation, resend and scanner-safety specs passed against the Mailpit service
 - [x] T060 `nodemailer@~6.9` carried eleven advisories at high or moderate severity, on the mail path of an authentication feature, and failed the CI `audit` job. Upgraded to `~10.1.7` (`@types/nodemailer@~8.0.2`; named imports, since 10.x is ESM). Real SMTP delivery re-verified end to end against Mailpit on desktop and mobile
+- [x] T061 First CI run, ten e2e failures in three groups, none reproducible on the development Mac: (a) axe `target-size` on the plain text links of the auth screens (`Bereits registriert? Anmelden.` and the like): 19 px high with 23 px to the button above, one pixel short of axe's 24 px offset rule. It depends on the platform's font metrics, so it passed locally. The links now use the design system's `btn btn--ghost btn--block`, like every other link in the app, and the auth scans assert the repo's `expectTouchTargets` 44 px floor, which does not depend on fonts (observed red on four tests, then green). (b) `us3-offline` asserted `getByRole("alert")`, which also matches Next's empty, always-present route announcer: on a fast machine it passed on the announcer before the error rendered, on CI the error rendered first and strict mode threw. It now asserts the page's own `p[role="alert"]`. (c) Fixing (b) exposed that the test's closing `page.reload()` races `@serwist/next`'s default `reloadOnOnline`, and that its `not.toBeVisible()` also passes on a page that has not rendered. It now waits for the automatic reload and asserts the empty state
+- [ ] T062 Clear the 14 advisories that predate this feature (`next` including one critical, `braces`, `browserslist`, `esbuild`, `fast-uri`, `sharp`, `source-map-js`, `brace-expansion`), which fail the CI `audit` job. Decided to do this at the end of the implementation plan, not now; it is feature 001's open T154 territory. Do it before merge, because the job is a required gate (Article IX)
 
 ---
 
 ## Summary
 
-**Total tasks**: 60
+**Total tasks**: 62
 - Setup: 7 (T001–T007)
 - Token/Email infrastructure: 5 (T008–T012)
 - User Story 1: 10 (T013–T022)
@@ -207,7 +209,7 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 - User Story 4: 6 (T033–T038)
 - Migration verification: 6 (T039–T044)
 - Integration: 8 (T045–T052)
-- Defects and follow-ups found during verification: 8 (T053–T060)
+- Defects and follow-ups found during verification: 10 (T053–T062)
 
 **TDD tasks**: 18 (marked "test first")
 **Parallel-eligible tasks**: 31 (marked [P])
