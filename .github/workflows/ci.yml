@@ -131,6 +131,24 @@ jobs:
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
+      # Registration sends no session: every spec confirms an account through
+      # the emailed link, so the run needs a mail catcher it can read back
+      # (apps/web/tests/support/account.ts). Pinned, like every other image.
+      mailpit:
+        image: axllent/mailpit:v1.31.6
+        ports: ["1025:1025", "8025:8025"]
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      # 127.0.0.1, not localhost: Node resolves localhost to ::1 first, and an
+      # IPv6 port proxy to the container can stall an SMTP connection.
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: "1025"
+      SMTP_FROM: noreply@finance-manager.local
+      APP_BASE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
