@@ -39,6 +39,11 @@ describe("error contract", () => {
       MONTH_NOT_ACTIVE: "BAD_REQUEST",
       MONTH_NOT_DUE: "BAD_REQUEST",
       MONTH_OUT_OF_HORIZON: "BAD_REQUEST",
+      // Feature 002 (specs/002-email-verification/contracts/errors.md). That
+      // contract names the codes but not their transport; pinned here.
+      ACCOUNT_NOT_CONFIRMED: "UNAUTHORIZED",
+      TOKEN_INVALID: "BAD_REQUEST",
+      ALREADY_CONFIRMED: "CONFLICT",
     };
 
     for (const [code, transport] of Object.entries(expected)) {
@@ -51,6 +56,8 @@ describe("error contract", () => {
     // change nobody reviewed.
     expect(Object.keys(APP_ERROR_TRANSPORT).sort()).toEqual(
       [
+        "ACCOUNT_NOT_CONFIRMED",
+        "ALREADY_CONFIRMED",
         "AMOUNT_GAP",
         "ANCHOR_REQUIRED",
         "AUTH_FAILED",
@@ -67,6 +74,7 @@ describe("error contract", () => {
         "NOT_FOUND",
         "RATE_LIMITED",
         "STILL_REFERENCED",
+        "TOKEN_INVALID",
         "TRANSFER_EQUALS_SOURCE",
         "VALIDATION_FAILED",
       ].sort(),

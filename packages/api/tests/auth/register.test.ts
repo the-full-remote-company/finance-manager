@@ -75,8 +75,8 @@ describe("auth.register", () => {
     );
     expect(members.rows[0]?.count).toBe("1");
 
-    // A session is issued on success.
-    expect(setSessionCookie).toHaveBeenCalledTimes(1);
+    // Feature 002 (FR-001): no session until the address is confirmed.
+    expect(setSessionCookie).not.toHaveBeenCalled();
   });
 
   it("normalises email case: registering twice with different casing is one collision", async () => {

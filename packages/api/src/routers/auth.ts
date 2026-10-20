@@ -1,5 +1,16 @@
-import { randomUUID } from "node:crypto";
-import { hashPassword, issueSessionToken, recordAuditEvent, verifyPassword } from "@finance/auth";
+import { createHash, randomUUID } from "node:crypto";
+import {
+  composeConfirmToken,
+  hashPassword,
+  issueConfirmToken,
+  issueSessionToken,
+  parseConfirmToken,
+  recordAuditEvent,
+  sendConfirmationEmail,
+  supersedePreviousTokens,
+  verifyConfirmToken,
+  verifyPassword,
+} from "@finance/auth";
 import { sql, withWorkspace } from "@finance/db";
 import { z } from "zod";
 import { appError, toTrpcError } from "../errors.js";
@@ -64,33 +75,41 @@ export const authRouter = router({
           await tx.execute(
             sql`insert into "workspaces" ("id", "name") values (${workspaceId}, ${input.displayName})`,
           );
+          // Feature 002: confirmed = false for new registrations (FR-001)
           await tx.execute(
-            sql`insert into "users" ("id", "workspace_id", "email", "display_name", "password_hash")
-                values (${userId}, ${workspaceId}, ${input.email}, ${input.displayName}, ${passwordHash})`,
+            sql`insert into "users" ("id", "workspace_id", "email", "display_name", "password_hash", "confirmed")
+                values (${userId}, ${workspaceId}, ${input.email}, ${input.displayName}, ${passwordHash}, false)`,
           );
         });
       } catch (error) {
         if (!isUniqueViolation(error)) throw error;
 
-        // FR-001/ADR 0003: the response does not disclose that the address
+        // FR-011/ADR 0003: the response does not disclose that the address
         // is already registered. Same shape, same timing class as success —
-        // and no session is issued, because there is no new account for one
-        // to belong to.
+        // and NO session is created, NO email is sent (enumeration resistance).
         return { userId, workspaceId };
       }
 
-      const { token, tokenHash } = issueSessionToken();
-      const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+      // Feature 002: Issue confirmation token and send email (FR-002)
+      const {
+        raw: confirmToken,
+        hash: confirmHash,
+        expiresAt: confirmExpiresAt,
+      } = issueConfirmToken();
 
       await withWorkspace(ctx.db, workspaceId, async (tx) => {
         await tx.execute(
-          sql`insert into "sessions" ("workspace_id", "user_id", "token_hash", "expires_at")
-              values (${workspaceId}, ${userId}, ${tokenHash}, ${expiresAt})`,
+          sql`insert into "confirmation_tokens" ("workspace_id", "user_id", "token_hash", "expires_at")
+              values (${workspaceId}, ${userId}, ${confirmHash}, ${confirmExpiresAt})`,
         );
       });
 
+      // Send confirmation email (FR-002, FR-017: send failures are logged, not shown)
+      const confirmLink = `${process.env.APP_BASE_URL || "http://localhost:3000"}/confirm?token=${composeConfirmToken(workspaceId, confirmToken)}`;
+      await sendConfirmationEmail(input.email, confirmLink);
+
+      // Feature 002: NO session cookie is set (FR-001)
       // Registration is not in FR-006's audited list (contracts/procedures.md).
-      ctx.setSessionCookie?.(token, expiresAt);
 
       return { userId, workspaceId };
     }),
@@ -113,10 +132,12 @@ export const authRouter = router({
       // ADR 0008: the same bootstrap ADR 0007 uses for a session token,
       // applied one step earlier, because a workspace cannot be scoped
       // before the matching user row is found.
+      // Feature 002: also fetch confirmed field
       const found = await ctx.db.execute<{
         user_id: string;
         workspace_id: string;
         password_hash: string;
+        confirmed: boolean;
       }>(sql`select * from app_authenticate(${input.email})`);
       const row = found.rows[0];
 
@@ -126,10 +147,11 @@ export const authRouter = router({
       const valid = await verifyPassword(row?.password_hash ?? "", input.password);
 
       if (!row || !valid) {
-        // FR-006: audited on failure too. No workspace is known for an
+        // FR-006/FR-020: audited on failure too. No workspace is known for an
         // unknown address; for a known one with a wrong password, the event
         // still carries no workspace, so the two failures stay
         // indistinguishable in the log as well as on the wire.
+        // Unconfirmed accounts with wrong passwords also fall here (enumeration resistance).
         await recordAuditEvent(ctx.db, {
           type: "sign_in_failed",
           workspaceId: null,
@@ -137,6 +159,19 @@ export const authRouter = router({
           ip: ctx.ip,
         });
         throw toTrpcError(appError("AUTH_FAILED"));
+      }
+
+      // Feature 002: Check confirmation status after password verification (FR-020)
+      // Wrong password already threw above, so this branch reveals only what the caller knows.
+      if (!row.confirmed) {
+        // Audit as sign_in_failed (unconfirmed account, no workspace in event)
+        await recordAuditEvent(ctx.db, {
+          type: "sign_in_failed",
+          workspaceId: null,
+          userId: null,
+          ip: ctx.ip,
+        });
+        throw toTrpcError(appError("ACCOUNT_NOT_CONFIRMED", { email: input.email }));
       }
 
       const { token, tokenHash } = issueSessionToken();
@@ -249,5 +284,180 @@ export const authRouter = router({
           locale: "de-DE",
         };
       });
+    }),
+
+  confirm: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/auth/confirm",
+        tags: ["auth"],
+        summary: "Confirm email via token",
+        protect: false,
+      },
+    })
+    .input(z.object({ token: z.string().min(1) }))
+    .output(z.object({ userId: z.string(), workspaceId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // The link carries `<workspaceId>.<secret>`. The workspace id is not a
+      // secret; it only lets the lookup run in a workspace-scoped transaction,
+      // under ordinary row-level security, with no privileged function.
+      const parsed = parseConfirmToken(input.token);
+
+      type Outcome =
+        | { kind: "invalid" }
+        | { kind: "already_confirmed" }
+        | {
+            kind: "confirmed";
+            userId: string;
+            workspaceId: string;
+            sessionToken: string;
+            expiresAt: Date;
+          };
+
+      const outcome: Outcome = parsed
+        ? await withWorkspace(ctx.db, parsed.workspaceId, async (tx): Promise<Outcome> => {
+            const tokenHash = createHash("sha256").update(parsed.raw).digest("hex");
+
+            // `for update`: two concurrent opens of one link serialise here, so
+            // only one can consume it.
+            const found = await tx.execute<{
+              user_id: string;
+              expires_at: Date;
+              superseded_at: Date | null;
+            }>(
+              sql`select "user_id", "expires_at", "superseded_at"
+                  from "confirmation_tokens"
+                  where "token_hash" = ${tokenHash}
+                  for update`,
+            );
+            const row = found.rows[0];
+            if (
+              !row ||
+              !verifyConfirmToken({
+                providedRaw: parsed.raw,
+                storedHash: tokenHash,
+                expiresAt: new Date(row.expires_at),
+                supersededAt: row.superseded_at === null ? null : new Date(row.superseded_at),
+              })
+            ) {
+              return { kind: "invalid" };
+            }
+
+            const user = await tx.execute<{ confirmed: boolean }>(
+              sql`select "confirmed" from "users" where "id" = ${row.user_id}`,
+            );
+            // The account was deleted after the token was issued.
+            if (!user.rows[0]) return { kind: "invalid" };
+            if (user.rows[0].confirmed) return { kind: "already_confirmed" };
+
+            await tx.execute(
+              sql`update "users" set "confirmed" = true, "confirmed_at" = now()
+                  where "id" = ${row.user_id}`,
+            );
+            // Single use (FR-005): every token for this user goes, including
+            // superseded ones.
+            await tx.execute(
+              sql`delete from "confirmation_tokens" where "user_id" = ${row.user_id}`,
+            );
+
+            const { token: sessionToken, tokenHash: sessionHash } = issueSessionToken();
+            const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+            await tx.execute(
+              sql`insert into "sessions" ("workspace_id", "user_id", "token_hash", "expires_at")
+                  values (${parsed.workspaceId}, ${row.user_id}, ${sessionHash}, ${expiresAt})`,
+            );
+            await recordAuditEvent(tx, {
+              type: "account_confirmed",
+              workspaceId: parsed.workspaceId,
+              userId: row.user_id,
+              ip: ctx.ip,
+            });
+
+            return {
+              kind: "confirmed",
+              userId: row.user_id,
+              workspaceId: parsed.workspaceId,
+              sessionToken,
+              expiresAt,
+            };
+          })
+        : { kind: "invalid" };
+
+      if (outcome.kind !== "confirmed") {
+        // Outside the transaction above, which has ended. Attributed to no
+        // workspace and no user: nothing was proven about who is asking.
+        await recordAuditEvent(ctx.db, {
+          type: "confirmation_failed",
+          workspaceId: null,
+          userId: null,
+          ip: ctx.ip,
+        });
+        throw toTrpcError(
+          appError(outcome.kind === "already_confirmed" ? "ALREADY_CONFIRMED" : "TOKEN_INVALID"),
+        );
+      }
+
+      ctx.setSessionCookie?.(outcome.sessionToken, outcome.expiresAt);
+      return { userId: outcome.userId, workspaceId: outcome.workspaceId };
+    }),
+
+  resendConfirmation: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/auth/resend-confirmation",
+        tags: ["auth"],
+        summary: "Resend confirmation email",
+        protect: false,
+      },
+    })
+    .input(z.object({ email: emailSchema }))
+    .output(z.object({ ok: z.literal(true) }))
+    .mutation(async ({ ctx, input }) => {
+      await consumeRateLimit(ctx.db, { identifier: input.email, ip: ctx.ip }, AUTH_RATE_LIMIT);
+
+      // The same bootstrap sign-in uses (ADR 0008): no workspace is known yet,
+      // and `users` is under forced row-level security, so a plain select here
+      // would see nothing.
+      const found = await ctx.db.execute<{
+        user_id: string;
+        workspace_id: string;
+        confirmed: boolean;
+      }>(sql`select "user_id", "workspace_id", "confirmed" from app_authenticate(${input.email})`);
+      const user = found.rows[0];
+
+      // FR-009: the same response whether the address is unknown, confirmed
+      // or unconfirmed (enumeration resistance).
+      if (!user || user.confirmed) {
+        return { ok: true as const };
+      }
+
+      const { raw, hash, expiresAt } = issueConfirmToken();
+      const supersededAt = supersedePreviousTokens();
+
+      await withWorkspace(ctx.db, user.workspace_id, async (tx) => {
+        // FR-008: every earlier unused token stops working.
+        await tx.execute(
+          sql`update "confirmation_tokens" set "superseded_at" = ${supersededAt}
+              where "user_id" = ${user.user_id} and "superseded_at" is null`,
+        );
+        await tx.execute(
+          sql`insert into "confirmation_tokens" ("workspace_id", "user_id", "token_hash", "expires_at")
+              values (${user.workspace_id}, ${user.user_id}, ${hash}, ${expiresAt})`,
+        );
+        await recordAuditEvent(tx, {
+          type: "confirmation_resent",
+          workspaceId: user.workspace_id,
+          userId: user.user_id,
+          ip: ctx.ip,
+        });
+      });
+
+      // FR-017: a send failure is logged inside, never surfaced.
+      const link = `${process.env.APP_BASE_URL || "http://localhost:3000"}/confirm?token=${composeConfirmToken(user.workspace_id, raw)}`;
+      await sendConfirmationEmail(input.email, link);
+
+      return { ok: true as const };
     }),
 });

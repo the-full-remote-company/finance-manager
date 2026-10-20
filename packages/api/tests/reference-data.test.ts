@@ -2,6 +2,7 @@ import { createDatabase, createPool, sql, type Database } from "@finance/db";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import type { Context } from "../src/context.js";
 import { appRouter } from "../src/router.js";
+import { registerConfirmedWorkspace } from "./support/session.js";
 
 /**
  * FR-007, FR-008, FR-009a: create, rename, reorder, delete for accounts and
@@ -33,22 +34,7 @@ async function registerWorkspace(
   db: Database = appDb,
 ): Promise<{ token: string; workspaceId: string }> {
   registrations += 1;
-  let capturedToken: string | undefined;
-  const ctx: Context = {
-    db,
-    sessionToken: null,
-    ip: "203.0.113.7",
-    setSessionCookie: (token) => {
-      capturedToken = token;
-    },
-  };
-  const result = await appRouter.createCaller(ctx).auth.register({
-    email: `tester-${String(registrations)}@example.test`,
-    password: "correct horse battery",
-    displayName: "Tester",
-  });
-  if (!capturedToken) throw new Error("no session token captured");
-  return { token: capturedToken, workspaceId: result.workspaceId };
+  return registerConfirmedWorkspace(db, ownerDb, `tester-${String(registrations)}@example.test`);
 }
 
 function callerWithToken(token: string, db: Database = appDb) {

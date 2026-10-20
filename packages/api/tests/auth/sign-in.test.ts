@@ -36,9 +36,19 @@ function caller(db: Database = appDb) {
   return { caller: appRouter.createCaller(ctx), setSessionCookie };
 }
 
+/**
+ * Registers and, by default, confirms the account (feature 002): the
+ * scenarios in this file are about credentials, so the account must be in its
+ * post-confirmation state. The unconfirmed path is covered by
+ * `sign-in-unconfirmed.test.ts` (T034).
+ */
 async function registerUser(email: string, password: string, displayName = "Person") {
   const { caller: c } = caller();
-  return c.auth.register({ email, password, displayName });
+  const result = await c.auth.register({ email, password, displayName });
+  await ownerDb.execute(
+    sql`update "users" set "confirmed" = true, "confirmed_at" = now() where "id" = ${result.userId}`,
+  );
+  return result;
 }
 
 async function auditEventCount(type: string): Promise<number> {
@@ -61,13 +71,12 @@ describe("auth.signIn", () => {
     expect(result.workspaceId).toBeTruthy();
     expect(setSessionCookie).toHaveBeenCalledTimes(1);
 
-    // Two rows: one from `registerUser`'s own registration session, one from
-    // this sign-in. Sessions are additive, not a slot of one (no "log out
-    // everywhere else" behaviour is specified for this feature).
+    // Exactly one row: registration no longer creates a session (feature
+    // 002, FR-001), so this sign-in's is the only one.
     const sessionCount = await ownerDb.execute<{ count: string }>(
       sql`select count(*)::text as count from "sessions" where "workspace_id" = ${result.workspaceId}`,
     );
-    expect(sessionCount.rows[0]?.count).toBe("2");
+    expect(sessionCount.rows[0]?.count).toBe("1");
   });
 
   it("records sign_in_succeeded on success", async () => {

@@ -38,7 +38,10 @@ export type AppErrorCode =
   | "AMOUNT_GAP"
   | "MONTH_NOT_ACTIVE"
   | "MONTH_NOT_DUE"
-  | "MONTH_OUT_OF_HORIZON";
+  | "MONTH_OUT_OF_HORIZON"
+  | "ACCOUNT_NOT_CONFIRMED"
+  | "TOKEN_INVALID"
+  | "ALREADY_CONFIRMED";
 
 type TransportCode =
   "BAD_REQUEST" | "UNAUTHORIZED" | "NOT_FOUND" | "TOO_MANY_REQUESTS" | "CONFLICT";
@@ -63,6 +66,9 @@ export const APP_ERROR_TRANSPORT: Readonly<Record<AppErrorCode, TransportCode>> 
   MONTH_NOT_ACTIVE: "BAD_REQUEST",
   MONTH_NOT_DUE: "BAD_REQUEST",
   MONTH_OUT_OF_HORIZON: "BAD_REQUEST",
+  ACCOUNT_NOT_CONFIRMED: "UNAUTHORIZED",
+  TOKEN_INVALID: "BAD_REQUEST",
+  ALREADY_CONFIRMED: "CONFLICT",
 };
 
 /**
@@ -90,6 +96,9 @@ export interface AppErrorDetails {
   MONTH_NOT_ACTIVE: { activeFrom: string; activeTo: string | null };
   MONTH_NOT_DUE: { dueMonths: string[] };
   MONTH_OUT_OF_HORIZON: { firstMonth: string; lastMonth: string };
+  ACCOUNT_NOT_CONFIRMED: { email: string };
+  TOKEN_INVALID: never;
+  ALREADY_CONFIRMED: never;
 }
 
 /** The allow-list, enforced at construction rather than trusted. */
@@ -112,6 +121,9 @@ const PERMITTED_DETAIL_KEYS: Readonly<Record<AppErrorCode, readonly string[]>> =
   MONTH_NOT_ACTIVE: ["activeFrom", "activeTo"],
   MONTH_NOT_DUE: ["dueMonths"],
   MONTH_OUT_OF_HORIZON: ["firstMonth", "lastMonth"],
+  ACCOUNT_NOT_CONFIRMED: ["email"],
+  TOKEN_INVALID: [],
+  ALREADY_CONFIRMED: [],
 };
 
 export interface AppError<Code extends AppErrorCode = AppErrorCode> {

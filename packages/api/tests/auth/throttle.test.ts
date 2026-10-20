@@ -88,11 +88,15 @@ describe("auth throttling (FR-005)", () => {
         .catch(() => undefined);
     }
 
-    await c.auth.register({
+    const other = await c.auth.register({
       email: "someone-else@example.test",
       password: "correct horse battery",
       displayName: "Someone Else",
     });
+    // Sign-in requires a confirmed account (feature 002).
+    await ownerDb.execute(
+      sql`update "users" set "confirmed" = true, "confirmed_at" = now() where "id" = ${other.userId}`,
+    );
 
     const result = await c.auth.signIn({
       email: "someone-else@example.test",

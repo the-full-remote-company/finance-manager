@@ -13,6 +13,10 @@ import { appRouter } from "../src/router.js";
  * design. The contract is the authority where the two disagree; the fifth
  * entry is deliberate, not a slip.
  *
+ * Feature 002 adds two more, for the same reason `auth.register` is exempt:
+ * `auth.confirm` and `auth.resendConfirmation` are called by someone who, by
+ * definition, has no session yet — `auth.confirm` is how they obtain one.
+ *
  * `_def.type` distinguishes query/mutation but not which middleware a
  * procedure carries, so this reads the middleware stack length instead:
  * `protectedProcedure` always carries at least the session-resolving
@@ -20,6 +24,8 @@ import { appRouter } from "../src/router.js";
  */
 const EXEMPT = new Set([
   "auth.register",
+  "auth.confirm",
+  "auth.resendConfirmation",
   "auth.signIn",
   "auth.signOut",
   "auth.session",
@@ -59,9 +65,17 @@ describe("exempt procedures (FR-004)", () => {
     }
   });
 
-  it("the exempt set is exactly these five, no more", () => {
+  it("the exempt set is exactly these seven, no more", () => {
     expect([...EXEMPT].sort()).toEqual(
-      ["auth.register", "auth.session", "auth.signIn", "auth.signOut", "health.ping"].sort(),
+      [
+        "auth.confirm",
+        "auth.register",
+        "auth.resendConfirmation",
+        "auth.session",
+        "auth.signIn",
+        "auth.signOut",
+        "health.ping",
+      ].sort(),
     );
   });
 });
