@@ -29,4 +29,8 @@ export const auditEventTypeEnum = pgEnum("audit_event_type", [
   "signed_out",
   "export_performed",
   "account_deleted",
+  // Feature 002 (FR-015), migration 0007.
+  "account_confirmed",
+  "confirmation_resent",
+  "confirmation_failed",
 ]);

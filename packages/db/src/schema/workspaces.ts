@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 /**
  * The isolation boundary. Owns everything else (data-model.md).
@@ -34,6 +34,10 @@ export const users = pgTable(
     displayName: text("display_name").notNull(),
     /** argon2id, per ADR 0003. Never logged, never exported. */
     passwordHash: text("password_hash").notNull(),
+    /** Email confirmation state (feature 002). true means account can sign in. */
+    confirmed: boolean("confirmed").notNull().default(true),
+    /** Timestamp when account was confirmed (feature 002). null for unconfirmed accounts. */
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .default(sql`now()`),
