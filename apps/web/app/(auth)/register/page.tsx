@@ -130,7 +130,9 @@ export default function RegisterPage() {
           {resending ? t("resendingButton") : t("resendButton")}
         </button>
         <p>
-          <Link href="/sign-in">{t("switchToSignIn")}</Link>
+          <Link href="/sign-in" className="btn btn--ghost btn--block">
+            {t("switchToSignIn")}
+          </Link>
         </p>
       </div>
     );
@@ -223,7 +225,9 @@ export default function RegisterPage() {
       </button>
 
       <p>
-        <Link href="/sign-in">{t("switchToSignIn")}</Link>
+        <Link href="/sign-in" className="btn btn--ghost btn--block">
+          {t("switchToSignIn")}
+        </Link>
       </p>
     </form>
   );

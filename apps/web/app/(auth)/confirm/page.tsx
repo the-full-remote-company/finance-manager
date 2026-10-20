@@ -131,7 +131,9 @@ function ConfirmForm() {
         )}
 
         <p>
-          <Link href="/sign-in">{t("switchToSignIn")}</Link>
+          <Link href="/sign-in" className="btn btn--ghost btn--block">
+            {t("switchToSignIn")}
+          </Link>
         </p>
       </div>
     );
@@ -154,7 +156,9 @@ function ConfirmForm() {
       </button>
 
       <p>
-        <Link href="/sign-in">{t("switchToSignIn")}</Link>
+        <Link href="/sign-in" className="btn btn--ghost btn--block">
+          {t("switchToSignIn")}
+        </Link>
       </p>
     </div>
   );

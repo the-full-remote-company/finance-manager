@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
-import { expectNoSeriousA11yViolations } from "../support/a11y.js";
+import { expectNoSeriousA11yViolations, expectTouchTargets } from "../support/a11y.js";
 import { registerAndConfirmViaApi } from "../support/account.js";
 
 /**
@@ -185,10 +185,14 @@ test.describe("US1: accessibility of the auth screens", () => {
   test("register has no serious or critical accessibility violation", async ({ page }) => {
     await page.goto("/register");
     await expectNoSeriousA11yViolations(page, "/register");
+    // axe's own target-size rule passes or fails with the platform's font
+    // metrics (a 1 px difference in line height decided it); this does not.
+    await expectTouchTargets(page);
   });
 
   test("sign-in has no serious or critical accessibility violation", async ({ page }) => {
     await page.goto("/sign-in");
     await expectNoSeriousA11yViolations(page, "/sign-in");
+    await expectTouchTargets(page);
   });
 });

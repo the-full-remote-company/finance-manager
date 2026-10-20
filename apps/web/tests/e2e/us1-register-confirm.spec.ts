@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectNoSeriousA11yViolations } from "../support/a11y.js";
+import { expectNoSeriousA11yViolations, expectTouchTargets } from "../support/a11y.js";
 import {
   confirmInBrowser,
   latestConfirmationToken,
@@ -33,6 +33,7 @@ test.describe("Feature 002 US1: confirm an email address before first use", () =
       page.getByRole("button", { name: "Bestätigungs-E-Mail erneut senden" }),
     ).toBeVisible();
     await expectNoSeriousA11yViolations(page, "/register (check your email)");
+    await expectTouchTargets(page);
 
     // No session yet, and the app is not reachable.
     expect(await hasSession(page)).toBe(false);
@@ -43,6 +44,7 @@ test.describe("Feature 002 US1: confirm an email address before first use", () =
     await page.goto(`/confirm?token=${token}`);
     await expect(page.getByRole("heading", { name: "E-Mail-Adresse bestätigen" })).toBeVisible();
     await expectNoSeriousA11yViolations(page, "/confirm");
+    await expectTouchTargets(page);
     expect(await hasSession(page)).toBe(false);
 
     await page.getByRole("button", { name: "Konto bestätigen" }).click();
@@ -120,6 +122,7 @@ test.describe("Feature 002 US1: confirm an email address before first use", () =
     ).toBeVisible();
     expect(await hasSession(page)).toBe(false);
     await expectNoSeriousA11yViolations(page, "/confirm (invalid link)");
+    await expectTouchTargets(page);
   });
 
   test("a made-up link is refused with an explanation and a way to ask again (FR-007)", async ({

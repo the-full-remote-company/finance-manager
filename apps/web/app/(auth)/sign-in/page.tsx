@@ -166,7 +166,9 @@ export default function SignInPage() {
       </button>
 
       <p>
-        <Link href="/register">{t("switchToRegister")}</Link>
+        <Link href="/register" className="btn btn--ghost btn--block">
+          {t("switchToRegister")}
+        </Link>
       </p>
     </form>
   );
