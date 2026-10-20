@@ -33,6 +33,7 @@ public npm registry.
 ```bash
 pnpm install                  # exact versions; @tfrc/* are pinned, per Article V
 cp .env.example .env.local    # no secret in the file; placeholders only
+ln -s ../../.env.local apps/web/.env.local   # the web app reads the root file through this link
 docker compose up -d db       # PostgreSQL 17 on 5432
 pnpm db:migrate               # drizzle-kit, plain SQL migrations
 pnpm db:seed:dev              # two workspaces with overlapping data, for leak tests
@@ -79,6 +80,37 @@ pnpm build                  # production build
 ```
 
 `pnpm verify` runs all of them in the order above — cheapest signal first.
+
+After any router or schema change, regenerate the committed document before
+`openapi:check` will pass:
+
+```bash
+pnpm --filter @finance/api openapi:generate
+```
+
+### Running the end-to-end suite locally
+
+Since feature 002 no spec can sign in without an email: registration creates no
+session, so every spec registers, reads the confirmation mail from Mailpit and
+presses the confirm button. The suite therefore needs Mailpit as well as the
+database:
+
+```bash
+docker compose up -d db mailpit    # Mailpit: SMTP 1025, web UI and API 8025
+pnpm db:reset
+pnpm exec playwright test --workers=1
+```
+
+`.env.local` needs `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` and `APP_BASE_URL`
+(copy them from `.env.example`). Use `SMTP_HOST=127.0.0.1`, not `localhost`: on
+Docker Desktop, Node tries `::1` first and the IPv6 port proxy intermittently
+hangs (measured: 6 of 12 sends timed out).
+
+Use `--workers=1` on a development machine. Playwright's default worker count
+runs enough parallel Chromium instances against one shared `next start` and one
+Postgres pool to occasionally time out or detach a page. That is a property of
+the machine, not a regression, and CI's runners are not this machine, so
+`playwright.config.ts` is deliberately unchanged (Article IX).
 
 ### What each gate exists to catch
 

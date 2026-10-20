@@ -159,8 +159,15 @@ apps/web/                      # Next.js App Router, de-DE default, PWA
 
 packages/core/                 # pure domain; imports nothing in this repo
 ├── src/money/                 # Money, allocate, applyShare
+│                              # allocate is the only function that splits a total into
+│                              # parts without losing a minor unit; applyShare is the
+│                              # only place a share is rounded. Callers (smoothing,
+│                              # transfers) use them, never a re-derived division
 ├── src/time/                  # YearMonth index, activity window
+├── src/commitment/            # validation; amountInForce (amount history lookup only)
 ├── src/projection/            # rhythm, due months, period window, smoothing
+│                              # any due-month or period logic is imported from here,
+│                              # not re-derived in commitment/ or transfers/
 ├── src/dashboard/             # month aggregation, exact-rational percentages
 ├── src/transfers/             # share application, destination totals
 └── tests/                     # unit + property tests; 90% lines and branches

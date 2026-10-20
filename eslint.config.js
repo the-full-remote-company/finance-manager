@@ -109,7 +109,9 @@ export default tseslint.config(
   {
     // The service worker builds against `lib: ["webworker"]`, which clashes
     // with the DOM lib every other file in this app needs — hence its own
-    // tsconfig, outside the project service's auto-discovered set.
+    // tsconfig, outside the project service's auto-discovered set. A second
+    // worker file needs the same treatment: add it to tsconfig.worker.json's
+    // `include` and to `files` here.
     files: ["apps/web/sw.ts"],
     languageOptions: {
       parserOptions: {
