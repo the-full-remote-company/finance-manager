@@ -125,7 +125,12 @@ test.describe("US3: offline read-only dashboard (Story 3 scenarios 7–8)", () =
     try {
       const start = Date.now();
       await page.getByRole("button", { name: "Konto hinzufügen" }).click();
-      await expect(page.getByRole("alert")).toBeVisible();
+      // The page's own error paragraph, not `getByRole("alert")`: Next.js keeps
+      // an empty, always-present `role="alert"` route announcer in the DOM, so
+      // the role alone also matches that. On a fast machine the assertion
+      // passed on the announcer before the error even rendered; on a slower
+      // one the error rendered first and strict mode threw (CI).
+      await expect(page.locator('p[role="alert"]')).toBeVisible();
       const elapsedMs = Date.now() - start;
       // Failed immediately by the service worker's synthesised
       // `OFFLINE_READ_ONLY`, not left to hang to a transport timeout.
@@ -137,10 +142,23 @@ test.describe("US3: offline read-only dashboard (Story 3 scenarios 7–8)", () =
         "Sparkonto",
       );
     } finally {
+      // @serwist/next reloads the page when the browser comes back online
+      // (`reloadOnOnline` defaults to true), so a reload of our own would race
+      // it and abort. Mark this document, go online, and wait for the
+      // automatic reload to wipe the mark.
+      await page.evaluate(() => {
+        document.documentElement.dataset["beforeOnline"] = "true";
+      });
       await context.setOffline(false);
     }
+    await page.waitForFunction(
+      () => document.documentElement.dataset["beforeOnline"] === undefined,
+    );
 
-    await page.reload();
+    // The positive proof that nothing was saved: a fresh online load of a
+    // workspace with no accounts shows the empty state. (Asserting only that
+    // the cell is absent also passes on a page that has not rendered yet.)
+    await expect(page.getByText("Noch keine Konten vorhanden.")).toBeVisible();
     await expect(page.getByRole("cell", { name: "Sparkonto" })).not.toBeVisible();
   });
 
