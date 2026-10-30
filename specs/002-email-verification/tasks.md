@@ -175,7 +175,7 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 - [x] T049 Verify coverage floors: 90% in packages/core (no core changes expected), 70% repo-wide (auth changes covered) 89.68 % lines repo-wide (floor 70); `packages/core` untouched
 - [x] T050 Retire `HANDOFF.md`, which is not a spec-kit artifact (`tasks.md` checkboxes are the resume state). Its durable content moved: the service-worker lesson to [ADR 0010](../../decisions/0010-service-worker-cache-invalidation.md), the `core` conventions to feature 001's `plan.md` structure notes, the commands and the `--workers=1` note to feature 001's `quickstart.md`, the worker-tsconfig note to the comment in `eslint.config.js`. Feature 001's resume point is its own `tasks.md`: T119
 - [x] T051 [P] Write `specs/002-email-verification/quickstart.md`: local Mailpit setup, SMTP env vars for Postmark/AWS SES, how to test confirmation flow locally, how to verify an account is confirmed vs unconfirmed
-- [ ] T052 [P] Document the two registration-screen bug fixes in the commit message or PR description: `router.prefetch`→navigation (FR-013, T021), misleading German copy (FR-014, T022)
+- [x] T052 [P] Document the two registration-screen bug fixes in the commit message or PR description: `router.prefetch`→navigation (FR-013, T021), misleading German copy (FR-014, T022) Done in PR #1's description
 
 **Checkpoint**: Feature complete, all tests green, documentation updated.
 
