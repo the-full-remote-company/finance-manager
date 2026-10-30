@@ -1,4 +1,5 @@
 ---
+model: anthropic/claude-haiku-4-5
 description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
 ---
 

@@ -1,0 +1,28 @@
+{
+  "name": "@finance/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./password": "./src/password.ts",
+    "./session": "./src/session.ts",
+    "./audit": "./src/audit.ts",
+    "./confirm-token": "./src/confirm-token.ts",
+    "./email": "./src/email.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "mail:test": "node --env-file=../../.env.local scripts/send-test-email.ts"
+  },
+  "dependencies": {
+    "@finance/core": "workspace:*",
+    "@finance/db": "workspace:*",
+    "@node-rs/argon2": "2.2.1",
+    "nodemailer": "~10.1.7"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "~8.0.2"
+  }
+}

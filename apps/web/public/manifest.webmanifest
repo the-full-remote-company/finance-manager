@@ -1,0 +1,12 @@
+{
+  "name": "Finanzplaner",
+  "short_name": "Finanzplaner",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "lang": "de-DE",
+  "background_color": "#ffffff",
+  "theme_color": "#4e56d3",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

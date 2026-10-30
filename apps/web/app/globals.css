@@ -1,0 +1,5 @@
+/* The single source of visual truth. Consumed, never forked (Article V).
+   @tfrc/product ships tokens + components; themes/finance is the product theme. */
+@import "@tfrc/product";
+@import "@tfrc/product/themes/finance";
+@import "tailwindcss";

@@ -1,0 +1,42 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 12 reads settings here rather than from package.json.
+#
+# Install scripts run only for the packages listed below. Anything else is a
+# supply-chain decision that has to be made deliberately, which is the same
+# reason "Baseline security controls" requires dependency vulnerability
+# scanning rather than trust.
+#
+# @node-rs/argon2 is listed ahead of its first use (T054): it ships a prebuilt
+# native binding and will need this the moment password hashing lands.
+allowBuilds:
+  "@parcel/watcher": true
+  "@swc/core": true
+  "@node-rs/argon2": true
+  esbuild: true
+  sharp: true
+
+# Transitive dependencies with published advisories whose parents have not
+# released a fix. Each selector matches only the vulnerable range and pins the
+# first patched release of the same major, so nothing healthy is rewritten.
+# Re-check on every `pnpm audit`: an entry whose parent has since moved on is
+# dead weight and should be deleted, not kept.
+#
+#   brace-expansion  via @serwist/next > glob > minimatch
+#   esbuild          via drizzle-kit > @esbuild-kit/* (0.18 -> 0.25: dev-only
+#                    config loader; verified by running `db:reset`)
+#   fast-uri         via stylelint > table > ajv
+#   qs               via trpc-to-openapi > co-body
+#   source-map-js    via next > postcss
+#   vite             via vitest > @vitest/mocker
+#   zod              via @serwist/next
+overrides:
+  "brace-expansion@<5.0.12": "5.0.12"
+  "esbuild@<0.25.0": "0.25.12"
+  "fast-uri@<3.1.9": "3.1.9"
+  "qs@<6.16.1": "6.16.1"
+  "source-map-js@<1.2.2": "1.2.2"
+  "vite@<8.3.3": "8.3.5"
+  "zod@<4.6.6": "4.6.7"

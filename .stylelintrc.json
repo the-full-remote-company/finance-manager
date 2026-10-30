@@ -1,0 +1,44 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "color-no-hex": [
+      true,
+      {
+        "message": "Article V: raw colour literals MUST NOT appear in this repository. Use a @tfrc/product token."
+      }
+    ],
+    "function-disallowed-list": [
+      ["rgb", "rgba", "hsl", "hsla", "oklch", "oklab", "lab", "lch", "color-mix"],
+      {
+        "message": "Article V: a colour function is a raw colour literal. Use a @tfrc/product token."
+      }
+    ],
+    "color-named": [
+      "never",
+      {
+        "message": "Article V: a named colour is a raw colour literal. Use a @tfrc/product token."
+      }
+    ],
+    "custom-property-pattern": null,
+    "import-notation": "string",
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "theme",
+          "source",
+          "utility",
+          "variant",
+          "custom-variant",
+          "apply",
+          "reference",
+          "plugin",
+          "config"
+        ]
+      }
+    ],
+    "declaration-property-value-disallowed-list": {
+      "/^--color-(gain|loss)$/": ["/.*/"]
+    }
+  }
+}

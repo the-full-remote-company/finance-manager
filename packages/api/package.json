@@ -1,0 +1,27 @@
+{
+  "name": "@finance/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./router": "./src/router.ts",
+    "./errors": "./src/errors.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "openapi:generate": "tsx ./scripts/generate-openapi.ts"
+  },
+  "dependencies": {
+    "@finance/auth": "workspace:*",
+    "@finance/core": "workspace:*",
+    "@finance/db": "workspace:*",
+    "@trpc/server": "11.18.0",
+    "trpc-to-openapi": "3.3.3",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.13"
+  }
+}

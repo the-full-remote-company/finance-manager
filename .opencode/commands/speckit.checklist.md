@@ -1,4 +1,5 @@
 ---
+model: anthropic/claude-haiku-4-5
 description: Generate a custom checklist for the current feature based on user requirements.
 ---
 

@@ -1,0 +1,45 @@
+{
+  "name": "finance-manager",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.4.2",
+  "engines": {
+    "node": ">=22.22.0 <23"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint && pnpm lint:boundaries && pnpm lint:styles",
+    "lint:boundaries": "depcruise --config .dependency-cruiser.cjs packages apps",
+    "lint:styles": "stylelint \"{apps,packages}/**/*.css\"",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "test:unit": "vitest run --project core --project ui --project auth-unit --project web-unit",
+    "test:integration": "vitest run --project integration",
+    "test:isolation": "vitest run --project isolation",
+    "test:e2e": "playwright test",
+    "verify:design-system": "node ./scripts/verify-design-system.mjs && vitest run --project ui -t \"design system class contract\"",
+    "openapi:check": "turbo run openapi:generate && git diff --exit-code -- packages/api/openapi/openapi.json",
+    "db:migrate": "pnpm --filter @finance/db migrate",
+    "db:reset": "pnpm --filter @finance/db reset",
+    "db:seed:dev": "pnpm --filter @finance/db seed:dev",
+    "db:verify:generated-columns": "pnpm --filter @finance/db verify:generated-columns",
+    "verify": "pnpm typecheck && pnpm lint && pnpm format && pnpm test:unit && pnpm test:integration && pnpm test:isolation && pnpm verify:design-system && pnpm openapi:check && pnpm test:e2e && pnpm build"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.63.0",
+    "@vitest/coverage-v8": "5.0.5",
+    "dependency-cruiser": "^18.3.1",
+    "eslint": "^10.10.0",
+    "prettier": "^3.9.6",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0",
+    "turbo": "^2.10.13",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "5.0.5"
+  }
+}

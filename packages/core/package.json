@@ -1,0 +1,22 @@
+{
+  "name": "@finance/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./money": "./src/money/index.ts",
+    "./time": "./src/time/index.ts",
+    "./projection": "./src/projection/index.ts",
+    "./amounts": "./src/amounts/index.ts",
+    "./dashboard": "./src/dashboard/index.ts",
+    "./transfers": "./src/transfers/index.ts",
+    "./commitment": "./src/commitment/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint . --no-error-on-unmatched-pattern"
+  },
+  "dependencies": {},
+  "comment": "Article VI: this package depends on nothing in this repo and nothing touching React, Next.js, tRPC, the ORM, HTTP or a DB client. The empty dependencies block is deliberate and is enforced by .dependency-cruiser.cjs."
+}

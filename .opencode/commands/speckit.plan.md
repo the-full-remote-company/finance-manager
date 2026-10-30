@@ -1,4 +1,5 @@
 ---
+model: anthropic/claude-haiku-4-5
 description: Execute the implementation planning workflow using the plan template to generate design artifacts.
 handoffs:
   - label: Create Tasks

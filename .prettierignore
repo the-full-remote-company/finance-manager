@@ -1,0 +1,15 @@
+pnpm-lock.yaml
+packages/api/openapi/openapi.json
+packages/db/migrations/**
+coverage/
+playwright-report/
+.next/
+dist/
+
+# Prose is hard-wrapped by hand for reviewable diffs: a reflow turns a
+# one-line change into a paragraph-sized one. Specs, ADRs and the constitution
+# are reviewed as prose, not formatted as code.
+specs/**/*.md
+decisions/**/*.md
+.specify/**
+*.md

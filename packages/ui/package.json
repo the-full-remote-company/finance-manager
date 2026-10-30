@@ -1,0 +1,25 @@
+{
+  "name": "@finance/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint . --no-error-on-unmatched-pattern"
+  },
+  "dependencies": {
+    "@finance/core": "workspace:*",
+    "@tfrc/product": "1.1.0",
+    "react": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "comment": "Article V: @tfrc/* is pinned exactly, never a range. tfrc-verify rejects ranges."
+}

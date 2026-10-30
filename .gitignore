@@ -8,6 +8,16 @@ build/
 .next/
 out/
 *.tsbuildinfo
+# Serwist's InjectManifest output (T098): rebuilt by every `next build`, with
+# a content hash that changes per build, so a committed copy would always be
+# stale relative to the build that actually shipped.
+apps/web/public/sw.js
+apps/web/public/sw.js.map
+apps/web/public/swe-worker-*.js
+# Regenerated on every `next dev`/`next build`; its own content imports
+# generated type files under `.next/`, which is itself ignored above, so a
+# committed copy would import a path nobody but the last builder's machine has.
+next-env.d.ts
 
 # Test / coverage output
 coverage/
@@ -37,3 +47,8 @@ opencode.json
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Personal financial data — MUST NOT be committed (public repo)
+Finanz*.xlsx
+*.xlsx
+*.csv
