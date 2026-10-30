@@ -18,7 +18,7 @@
     "@finance/core": "workspace:*",
     "@finance/db": "workspace:*",
     "@trpc/server": "11.18.0",
-    "trpc-to-openapi": "3.3.0",
+    "trpc-to-openapi": "3.3.3",
     "zod": "4.6.5"
   },
   "devDependencies": {
