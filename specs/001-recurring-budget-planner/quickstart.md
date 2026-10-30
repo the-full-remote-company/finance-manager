@@ -204,6 +204,28 @@ offline client.
 
 ---
 
+## Dependency updates
+
+[Dependabot](../../.github/dependabot.yml) opens pull requests on Mondays: one for
+a week's minor and patch updates per ecosystem, and one each for every major
+update and for `@tfrc/*`. They run the same gates as any other pull request, and
+nothing merges itself. Read the major ones and the design-system ones; the gates
+catch breakage, not intent.
+
+`pnpm audit` is the vulnerability scanner that works here (GitHub's own alerts
+cannot read the lockfile, see [ADR 0012](../../decisions/0012-dependency-update-automation.md)).
+It runs on every pull request and again on weekdays through
+`.github/workflows/dependency-audit.yml`, which can also be started by hand from
+the Actions tab. When it goes red, bump the dependency; for a transitive package
+whose parent has no fix, add a scoped entry under `overrides` in
+`pnpm-workspace.yaml`, and re-check those entries at each audit.
+
+```bash
+pnpm audit --audit-level moderate    # what both jobs run
+```
+
+---
+
 ## Resetting
 
 ```bash
