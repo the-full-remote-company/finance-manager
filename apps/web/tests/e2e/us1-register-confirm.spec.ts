@@ -52,6 +52,13 @@ test.describe("Feature 002 US1: confirm an email address before first use", () =
 
     expect(await hasSession(page)).toBe(true);
     await expect(page.getByRole("heading", { name: "Übersicht" })).toBeVisible();
+    // This page was reached by a client-side navigation, and Next removes the
+    // <title> element for roughly 30 ms in the middle of one, then restores it.
+    // axe's document-title rule is right to flag that gap, so scanning inside it
+    // fails under load (13 of 50 runs at four workers; seen on CI). Wait for the
+    // title, the property the rule checks, rather than scanning mid-transition.
+    // The other scans in this file follow a full page load and need no wait.
+    await expect(page).toHaveTitle("Finanzplaner");
     await expectNoSeriousA11yViolations(page, "/dashboard (after confirmation)");
   });
 
