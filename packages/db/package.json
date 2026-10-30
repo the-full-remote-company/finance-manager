@@ -19,8 +19,8 @@
   },
   "dependencies": {
     "@finance/core": "workspace:*",
-    "drizzle-orm": "0.45.2",
-    "pg": "^8.23.0"
+    "drizzle-orm": "0.45.4",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
