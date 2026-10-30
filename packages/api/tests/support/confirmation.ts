@@ -32,7 +32,8 @@ export async function resetAuthTables(): Promise<void> {
   await ownerDb.execute(sql`truncate table "workspaces" cascade`);
   await ownerDb.execute(sql`delete from "auth_attempts"`);
   await ownerDb.execute(sql`delete from "audit_events"`);
-  vi.mocked(sendConfirmationEmail).mockClear();
+  // Only when the spec mocked the mailer: a few use the real one.
+  if (vi.isMockFunction(sendConfirmationEmail)) vi.mocked(sendConfirmationEmail).mockClear();
 }
 
 export function caller(

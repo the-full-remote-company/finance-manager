@@ -31,6 +31,21 @@ import { publicProcedure, resolveSession, router } from "../trpc.js";
 
 const SESSION_TTL_MS = Number(process.env.SESSION_TTL_HOURS ?? 720) * 60 * 60 * 1000;
 
+/**
+ * Starts the confirmation email without making the request wait for it
+ * (ADR 0011). An SMTP conversation takes tens to thousands of milliseconds;
+ * if the response waited, "an email was sent" would be readable from the
+ * response time alone, which is the enumeration signal ADR 0003 and FR-009
+ * forbid. `sendConfirmationEmail` logs its own failures and does not reject;
+ * the `catch` is for the case where that contract is ever broken, and it
+ * logs nothing that identifies the recipient (Article VIII, FR-017).
+ */
+function sendInBackground(to: string, link: string): void {
+  sendConfirmationEmail(to, link).catch(() => {
+    console.error("[email] confirmation send rejected unexpectedly");
+  });
+}
+
 /** Case-insensitive per `users_email_lower_key`; normalised once, at the boundary. */
 const emailSchema = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
@@ -70,7 +85,18 @@ export const authRouter = router({
       const workspaceId = randomUUID();
       const userId = randomUUID();
 
+      // Issued on every path, duplicate or not, so the work done before the
+      // collision is known is the same; it is microseconds either way.
+      const {
+        raw: confirmToken,
+        hash: confirmHash,
+        expiresAt: confirmExpiresAt,
+      } = issueConfirmToken();
+
       try {
+        // One transaction: the account, its workspace and its first token
+        // exist together or not at all (FR-001, FR-002). A duplicate fails at
+        // the user insert, so the token insert is never reached.
         await withWorkspace(ctx.db, workspaceId, async (tx) => {
           await tx.execute(
             sql`insert into "workspaces" ("id", "name") values (${workspaceId}, ${input.displayName})`,
@@ -79,6 +105,10 @@ export const authRouter = router({
           await tx.execute(
             sql`insert into "users" ("id", "workspace_id", "email", "display_name", "password_hash", "confirmed")
                 values (${userId}, ${workspaceId}, ${input.email}, ${input.displayName}, ${passwordHash}, false)`,
+          );
+          await tx.execute(
+            sql`insert into "confirmation_tokens" ("workspace_id", "user_id", "token_hash", "expires_at")
+                values (${workspaceId}, ${userId}, ${confirmHash}, ${confirmExpiresAt})`,
           );
         });
       } catch (error) {
@@ -90,23 +120,11 @@ export const authRouter = router({
         return { userId, workspaceId };
       }
 
-      // Feature 002: Issue confirmation token and send email (FR-002)
-      const {
-        raw: confirmToken,
-        hash: confirmHash,
-        expiresAt: confirmExpiresAt,
-      } = issueConfirmToken();
-
-      await withWorkspace(ctx.db, workspaceId, async (tx) => {
-        await tx.execute(
-          sql`insert into "confirmation_tokens" ("workspace_id", "user_id", "token_hash", "expires_at")
-              values (${workspaceId}, ${userId}, ${confirmHash}, ${confirmExpiresAt})`,
-        );
-      });
-
-      // Send confirmation email (FR-002, FR-017: send failures are logged, not shown)
+      // FR-002: exactly one email per genuine registration. FR-017: a send
+      // failure is logged inside, never surfaced; and the response must not
+      // wait for the send (see `sendInBackground`).
       const confirmLink = `${process.env.APP_BASE_URL || "http://localhost:3000"}/confirm?token=${composeConfirmToken(workspaceId, confirmToken)}`;
-      await sendConfirmationEmail(input.email, confirmLink);
+      sendInBackground(input.email, confirmLink);
 
       // Feature 002: NO session cookie is set (FR-001)
       // Registration is not in FR-006's audited list (contracts/procedures.md).
@@ -392,6 +410,10 @@ export const authRouter = router({
           workspaceId: null,
           userId: null,
           ip: ctx.ip,
+          // A fixed machine token, never caller input (audit detail allow-list).
+          detail: {
+            reason: outcome.kind === "already_confirmed" ? "already_confirmed" : "token_invalid",
+          },
         });
         throw toTrpcError(
           appError(outcome.kind === "already_confirmed" ? "ALREADY_CONFIRMED" : "TOKEN_INVALID"),
@@ -454,9 +476,10 @@ export const authRouter = router({
         });
       });
 
-      // FR-017: a send failure is logged inside, never surfaced.
+      // FR-017: a send failure is logged inside, never surfaced; and the
+      // response must not wait for the send (see `sendInBackground`).
       const link = `${process.env.APP_BASE_URL || "http://localhost:3000"}/confirm?token=${composeConfirmToken(user.workspace_id, raw)}`;
-      await sendConfirmationEmail(input.email, link);
+      sendInBackground(input.email, link);
 
       return { ok: true as const };
     }),

@@ -86,7 +86,7 @@ out  { workspaceId: uuid, userId: uuid }
 
 **Confirmation happens on button press, not page load** (FR-006): The `/confirm?token=...` page loads with the token in the URL, displays "Click to confirm your account", and only on button click does it call `auth.confirm`. This prevents link scanners and email previewers from consuming tokens.
 
-**Audit event**: Appends `account_confirmed` with `workspace_id`, `user_id`, and `ip` on success. Appends `confirmation_failed` (with reason in details) on `TOKEN_INVALID` or `ALREADY_CONFIRMED`.
+**Audit event**: Appends `account_confirmed` with `workspace_id`, `user_id`, and `ip` on success. Appends `confirmation_failed` on `TOKEN_INVALID` or `ALREADY_CONFIRMED`, with `detail.reason` set to `token_invalid` or `already_confirmed` and no `workspace_id` or `user_id` (nothing about the caller was proven).
 
 **Idempotency**: Calling this twice with the same token fails the second time with `TOKEN_INVALID` (token is marked used or deleted after first success).
 

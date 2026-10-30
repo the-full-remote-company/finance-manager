@@ -43,11 +43,13 @@ Returned by `auth.confirm` when the token is expired, already used, superseded b
 
 **NOT returned when**:
 - Token is valid and not expired: confirmation succeeds, session created
-- Account is already confirmed: token is useless but not technically invalid; confirm returns `ALREADY_CONFIRMED` instead
+- Account is confirmed but the token is still live: that is `ALREADY_CONFIRMED` (see below). A link that was already *used* is not that case: confirming deletes every token for the user, so a second use finds none and is `TOKEN_INVALID` (spec scenario 4, FR-007)
 
 ### `ALREADY_CONFIRMED`
 
-Returned by `auth.confirm` when the token is valid but the account is already confirmed (e.g., user clicked the link twice, or confirmed via another browser/device).
+Returned by `auth.confirm` when the token is valid (exists, unexpired, not superseded) but the account is already confirmed.
+
+This is a defensive outcome, not a normal one. Confirming an account deletes all of that user's tokens in the same transaction, so clicking a link twice, or opening it in a second browser after the first confirmed, is `TOKEN_INVALID`. `ALREADY_CONFIRMED` is reachable only when an account becomes confirmed outside this flow while a token is still live (for example an operator setting `confirmed` directly). It needs a valid secret, so it reveals nothing to a caller who does not already hold the link.
 
 ```json
 {
@@ -57,7 +59,7 @@ Returned by `auth.confirm` when the token is valid but the account is already co
 }
 ```
 
-**Client handling**: Redirect to sign-in. Do not show an error; this is a successful outcome from the user's perspective.
+**Client handling**: Redirect to sign-in. Do not show an error; this is a successful outcome from the user's perspective. No session is created.
 
 ## Modified error codes
 

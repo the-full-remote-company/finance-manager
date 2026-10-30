@@ -69,6 +69,24 @@ describe("audit — confirmation (T016)", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.workspace_id).toBeNull();
     expect(rows[0]?.user_id).toBeNull();
+    expect(rows[0]?.detail).toEqual({ reason: "token_invalid" });
+  });
+
+  it("records reason already_confirmed when a live token meets an account confirmed outside the flow", async () => {
+    const { userId, token } = await registerUnconfirmed("alice@example.test");
+    await ownerDb.execute(
+      sql`update "users" set "confirmed" = true, "confirmed_at" = now() where "id" = ${userId}`,
+    );
+
+    await caller()
+      .caller.auth.confirm({ token })
+      .catch(() => undefined);
+
+    const rows = await auditRows("confirmation_failed");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.detail).toEqual({ reason: "already_confirmed" });
+    expect(rows[0]?.workspace_id).toBeNull();
+    expect(rows[0]?.user_id).toBeNull();
   });
 
   it("records confirmation_failed for a malformed token too", async () => {
