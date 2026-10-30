@@ -223,4 +223,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The same scan also runs on a schedule in dependency-audit.yml, so an
+      # advisory published while the repository is idle is still noticed. Keep
+      # the two thresholds in step.
       - run: pnpm audit --audit-level moderate

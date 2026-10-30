@@ -1,0 +1,96 @@
+# Automated dependency update pull requests (feature 001, T154; ADR 0012).
+#
+# Dependabot only reads this file from the default branch, so nothing here is
+# active until it is merged to main.
+#
+# Every update arrives as an ordinary pull request and must pass every gate in
+# .github/workflows/ci.yml, the design-system contract and the audit included.
+# Nothing here auto-merges: a person reads the PR.
+#
+# The pnpm workspace is declared once, at "/": Dependabot reads
+# pnpm-workspace.yaml from there and updates apps/web and packages/* together
+# with the single shared lockfile. Listing the package directories as well
+# would open duplicate PRs against the same lockfile. If the first PRs show
+# that workspace members are NOT being updated, switch to `directories` and
+# group by dependency name (see ADR 0012).
+#
+# NOT covered, on purpose or by limitation (also in ADR 0012):
+#   - the pnpm `overrides` in pnpm-workspace.yaml (the scheduled audit flags a
+#     vulnerable one; a dead one needs a person to notice)
+#   - image tags in the CI workflow's `services:` blocks (only docker-compose.yml)
+#   - the Node version in .nvmrc
+
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    # A release must be a week old before it is proposed: the window in which a
+    # malicious or broken release is most likely to be pulled again. Security
+    # updates are exempt from this and arrive immediately.
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    groups:
+      # Minor and patch updates are batched so a week of churn is one PR, not
+      # thirty. Majors are deliberately left out of every group, so each one is
+      # its own PR with its own changelog to read.
+      production-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+        # The design system is a contract, not just a dependency (Article V):
+        # `tfrc-verify` and the class-name contract test decide whether an
+        # update is safe, so it always gets a PR of its own.
+        exclude-patterns: ["@tfrc/*"]
+      development-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+        exclude-patterns: ["@tfrc/*"]
+    ignore:
+      # The runtime is Node 22 (.nvmrc); its type definitions must not run ahead of it.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"
+    groups:
+      actions-minor-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      # A PostgreSQL major version is a data migration, not a version bump
+      # (ADR 0002): it is planned, never proposed.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
