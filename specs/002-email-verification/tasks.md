@@ -93,15 +93,15 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 
 ### Tests (write first, observe failing)
 
-- [ ] T023 [P] [US2] *(test first)* `packages/api/tests/auth/resend-confirmation.test.ts`: resend for unconfirmed account supersedes all previous tokens and sends new email; resend for confirmed account returns same response, no email sent; resend for unknown email returns same response, no email sent; repeated resends are rate-limited (FR-008, FR-009, FR-010)
-- [ ] T024 [P] [US2] *(test first)* `packages/api/tests/auth/resend-timing.test.ts`: property test asserting resend response for unknown/confirmed/unconfirmed emails falls in the same timing class (enumeration resistance, FR-009)
-- [ ] T025 [P] [US2] `apps/web/tests/e2e/us2-resend.spec.ts`: register, open success screen, click "Resend", check Mailpit for second email with different token, verify first token returns TOKEN_INVALID, second token confirms account; axe scan on resend UI
+- [x] T023 [P] [US2] *(test first)* `packages/api/tests/auth/resend-confirmation.test.ts`: resend for unconfirmed account supersedes all previous tokens and sends new email; resend for confirmed account returns same response, no email sent; resend for unknown email returns same response, no email sent; repeated resends are rate-limited (FR-008, FR-009, FR-010) *Evidence*: written against the existing `resendConfirmation`, so 15 of 16 passed on first run and could not be seen failing; the one that failed (a rejecting mailer made the request reject) is what led to ADR 0011
+- [x] T024 [P] [US2] *(test first)* `packages/api/tests/auth/resend-timing.test.ts`: property test asserting resend response for unknown/confirmed/unconfirmed emails falls in the same timing class (enumeration resistance, FR-009) *Evidence*: red first (unconfirmed median 155.6 ms vs 1.7 ms awaiting a 150 ms send), green after ADR 0011 (3.0 to 4.0 ms vs 0.9 to 1.3 ms)
+- [x] T025 [P] [US2] `apps/web/tests/e2e/us2-resend.spec.ts`: register, open success screen, click "Resend", check Mailpit for second email with different token, verify first token returns TOKEN_INVALID, second token confirms account; axe scan on resend UI
 
 ### Implementation
 
-- [ ] T026 [US2] Add `packages/api/src/routers/auth.ts` — `resendConfirmation` procedure per [contracts/procedures.md](./contracts/procedures.md): look up email, if unconfirmed call supersedePreviousTokens, issue new token, send email; if confirmed or unknown, return same response without sending; rate-limit via auth_attempts (FR-008, FR-009, FR-010)
-- [ ] T027 [P] [US2] Wire resend button in `apps/web/app/(auth)/register/page.tsx` (already present from T021) to call `auth.resendConfirmation` with the email the user just registered
-- [ ] T028 [P] [US2] Build resend form in `/confirm` page for TOKEN_INVALID case: user enters email, calls `auth.resendConfirmation`, shows "Check your email" on success (FR-007)
+- [x] T026 [US2] Add `packages/api/src/routers/auth.ts` — `resendConfirmation` procedure per [contracts/procedures.md](./contracts/procedures.md): look up email, if unconfirmed call supersedePreviousTokens, issue new token, send email; if confirmed or unknown, return same response without sending; rate-limit via auth_attempts (FR-008, FR-009, FR-010)
+- [x] T027 [P] [US2] Wire resend button in `apps/web/app/(auth)/register/page.tsx` (already present from T021) to call `auth.resendConfirmation` with the email the user just registered
+- [x] T028 [P] [US2] Build resend form in `/confirm` page for TOKEN_INVALID case: user enters email, calls `auth.resendConfirmation`, shows "Check your email" on success (FR-007)
 
 **Checkpoint**: US2 works. Resend flow is fully functional and enumeration-resistant.
 
@@ -115,13 +115,13 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 
 ### Tests (write first, observe failing)
 
-- [ ] T029 [P] [US3] *(test first)* `packages/api/tests/auth/register-enumeration.test.ts`: register new address, confirmed address, unconfirmed address; all return same shape `{ userId, workspaceId }`; timing differs by no more than normal argon2id variance (measure 10 runs of each, compare distributions); no session created for duplicates (FR-011)
-- [ ] T030 [P] [US3] *(test first)* `packages/api/tests/auth/register-duplicate-behavior.test.ts`: registering a duplicate confirmed email sends no email; registering a duplicate unconfirmed email sends no email (not even a "your email was already registered" notice to the owner); no audit event for duplicate (FR-011)
-- [ ] T031 [P] [US3] `apps/web/tests/e2e/us3-enumeration.spec.ts`: register alice@example.com, confirm it, attempt to register alice@example.com again, verify response looks identical to first registration (user sees success screen), check Mailpit to confirm no second email sent
+- [x] T029 [P] [US3] *(test first)* `packages/api/tests/auth/register-enumeration.test.ts`: register new address, confirmed address, unconfirmed address; all return same shape `{ userId, workspaceId }`; timing differs by no more than normal argon2id variance (measure 10 runs of each, compare distributions); no session created for duplicates (FR-011) *Evidence*: red first (new 169.1 ms vs duplicate 17 to 20 ms), green after ADR 0011 (13.6 to 16.1 vs 12.9 to 15.2)
+- [x] T030 [P] [US3] *(test first)* `packages/api/tests/auth/register-duplicate-behavior.test.ts`: registering a duplicate confirmed email sends no email; registering a duplicate unconfirmed email sends no email (not even a "your email was already registered" notice to the owner); no audit event for duplicate (FR-011) *Evidence*: the duplicate path already behaved this way, so these passed on first run and could not be seen failing
+- [x] T031 [P] [US3] `apps/web/tests/e2e/us3-enumeration.spec.ts`: register alice@example.com, confirm it, attempt to register alice@example.com again, verify response looks identical to first registration (user sees success screen), check Mailpit to confirm no second email sent
 
 ### Implementation
 
-- [ ] T032 [US3] Verify `packages/api/src/routers/auth.ts` — `register`: password hashing happens before unique constraint check (already implemented in feature 001, unchanged), duplicate email returns `{ userId: randomUUID(), workspaceId: randomUUID() }` (fake IDs, same shape), no session, no email send, timing indistinguishable (FR-011). No code change needed if T014 is correct; this task is verification + documentation.
+- [x] T032 [US3] Verify `packages/api/src/routers/auth.ts` — `register`: password hashing happens before unique constraint check (already implemented in feature 001, unchanged), duplicate email returns `{ userId: randomUUID(), workspaceId: randomUUID() }` (fake IDs, same shape), no session, no email send, timing indistinguishable (FR-011). No code change needed if T014 is correct; this task is verification + documentation. Done: each ADR 0003 property is mapped to the test that asserts it in [ADR 0011](../../decisions/0011-confirmation-email-is-sent-after-the-response.md); the code did change (token issued on every path, one transaction)
 
 **Checkpoint**: US3 verified. Enumeration resistance holds across confirmation states.
 
@@ -135,14 +135,14 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 
 ### Tests (write first, observe failing)
 
-- [ ] T033 [P] [US4] *(test first)* `packages/api/tests/auth/sign-in-confirmed.test.ts`: sign in with confirmed account and correct password creates session as before; sign in with confirmed account and wrong password returns AUTH_FAILED as before (FR-020)
-- [ ] T034 [P] [US4] *(test first)* `packages/api/tests/auth/sign-in-unconfirmed.test.ts`: sign in with unconfirmed account and correct password returns ACCOUNT_NOT_CONFIRMED; sign in with unconfirmed account and wrong password returns AUTH_FAILED (not ACCOUNT_NOT_CONFIRMED, enumeration resistance) (FR-020)
-- [ ] T035 [P] [US4] `apps/web/tests/e2e/us4-confirmed-sign-in.spec.ts`: register + confirm, sign out, sign in again, verify session restored and dashboard accessible; run subset of feature 001's US1 isolation test against confirmed account (no regression)
+- [x] T033 [P] [US4] *(test first)* `packages/api/tests/auth/sign-in-confirmed.test.ts`: sign in with confirmed account and correct password creates session as before; sign in with confirmed account and wrong password returns AUTH_FAILED as before (FR-020)
+- [x] T034 [P] [US4] *(test first)* `packages/api/tests/auth/sign-in-unconfirmed.test.ts`: sign in with unconfirmed account and correct password returns ACCOUNT_NOT_CONFIRMED; sign in with unconfirmed account and wrong password returns AUTH_FAILED (not ACCOUNT_NOT_CONFIRMED, enumeration resistance) (FR-020)
+- [x] T035 [P] [US4] `apps/web/tests/e2e/us4-confirmed-sign-in.spec.ts`: register + confirm, sign out, sign in again, verify session restored and dashboard accessible; run subset of feature 001's US1 isolation test against confirmed account (no regression)
 
 ### Implementation
 
 - [x] T036 [US4] Modify `packages/api/src/routers/auth.ts` — `signIn`: after password verification succeeds, check `users.confirmed`; if false, append sign_in_failed audit event and return ACCOUNT_NOT_CONFIRMED error with email in details; if true, proceed as before (create session, return workspaceId); if password wrong, return AUTH_FAILED regardless of confirmation state (FR-020)
-- [ ] T037 [P] [US4] Build unconfirmed account screen in `apps/web/app/(auth)/sign-in/page.tsx`: handle ACCOUNT_NOT_CONFIRMED error, display "Account not confirmed" with email, offer "Resend confirmation email" button calling `auth.resendConfirmation` *(implemented; stays open until T034/T035 exercise it)*
+- [x] T037 [P] [US4] Build unconfirmed account screen in `apps/web/app/(auth)/sign-in/page.tsx`: handle ACCOUNT_NOT_CONFIRMED error, display "Account not confirmed" with email, offer "Resend confirmation email" button calling `auth.resendConfirmation` Exercised by `us4-confirmed-sign-in.spec.ts` and `sign-in-unconfirmed.test.ts`
 - [x] T038 [P] [US4] Update `apps/web/messages/de.json`: ACCOUNT_NOT_CONFIRMED error copy in German (FR-014)
 
 **Checkpoint**: US4 works. Confirmed accounts behave exactly as in feature 001. Unconfirmed accounts are handled gracefully at sign-in.
@@ -153,12 +153,12 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 
 **Purpose**: Verify the migration works on existing data and edge cases are handled.
 
-- [ ] T039 [P] *(test first)* `packages/db/tests/migrations/email-confirmation.test.ts`: seed a users table with 3 users (from feature 001 state), run migration 00XX, assert all 3 have confirmed=true and confirmed_at≈migration time; new registrations create confirmed=false (FR-019)
-- [ ] T040 Test edge case: token opened in different browser from registration. Verify: token still works, session created in opening browser, original browser has no session until sign-in.
-- [ ] T041 Test edge case: two tokens exist (after resend), only newest is valid. Verify: first token returns TOKEN_INVALID, second token confirms account.
-- [ ] T042 Test edge case: SMTP provider unreachable at registration. Verify: account created, user sees success screen, resend works once provider recovers, failed send logged (not shown to user) (FR-017).
-- [ ] T043 Test edge case: confirmation link opened after account was deleted. Verify: TOKEN_INVALID response (same as expired token).
-- [ ] T044 Test edge case: link preview/mail scanner opens confirm page. Verify: page loads without consuming token (no auto-confirm on page load per FR-006), explicit button press required.
+- [x] T039 [P] *(test first)* `packages/db/tests/migrations/email-confirmation.test.ts`: seed a users table with 3 users (from feature 001 state), run migration 00XX, assert all 3 have confirmed=true and confirmed_at≈migration time; new registrations create confirmed=false (FR-019) *Evidence*: runs the migrations on a scratch database holding three feature-001 accounts; flipping `DEFAULT true` to `false` turns two tests red, restored afterwards
+- [x] T040 Test edge case: token opened in different browser from registration. Verify: token still works, session created in opening browser, original browser has no session until sign-in. Covered by `confirm.test.ts` and `us1-register-confirm.spec.ts` (second browser context)
+- [x] T041 Test edge case: two tokens exist (after resend), only newest is valid. Verify: first token returns TOKEN_INVALID, second token confirms account. Covered by `confirm.test.ts` (superseded token) and `us2-resend.spec.ts`
+- [x] T042 Test edge case: SMTP provider unreachable at registration. Verify: account created, user sees success screen, resend works once provider recovers, failed send logged (not shown to user) (FR-017). *Evidence*: real mailer against a closed port and against a server that accepts and never speaks; making registration await the send again turns `mail-hang` red at 8039 ms, restored afterwards
+- [x] T043 Test edge case: confirmation link opened after account was deleted. Verify: TOKEN_INVALID response (same as expired token). Covered by `confirm.test.ts` (workspace deleted)
+- [x] T044 Test edge case: link preview/mail scanner opens confirm page. Verify: page loads without consuming token (no auto-confirm on page load per FR-006), explicit button press required. Covered by `us1-register-confirm.spec.ts` (repeated GET and reload leave the token unconsumed)
 
 **Checkpoint**: Migration verified, all edge cases covered.
 
@@ -168,13 +168,13 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 
 **Purpose**: Wire everything together, update documentation, verify all tests green.
 
-- [ ] T045 Run full test suite: `pnpm test:unit && pnpm test:integration && pnpm test:isolation && pnpm test:e2e` — all green
-- [ ] T046 Run `pnpm openapi:check` — regenerated document includes auth.confirm and auth.resendConfirmation, no drift
-- [ ] T047 Update `specs/001-recurring-budget-planner/contracts/procedures.md` if auth.register or auth.signIn changed (mark as MODIFIED in 002 contracts, but maintain feature 001 docs as source of truth for non-email features)
-- [ ] T048 Verify `pnpm lint`, `pnpm typecheck`, `pnpm format` all pass
-- [ ] T049 Verify coverage floors: 90% in packages/core (no core changes expected), 70% repo-wide (auth changes covered)
+- [x] T045 Run full test suite: `pnpm test:unit && pnpm test:integration && pnpm test:isolation && pnpm test:e2e` — all green Last run: 176 unit, 61 isolation, 210 integration, 76 e2e (2 skipped by design), 2 workers and 1
+- [x] T046 Run `pnpm openapi:check` — regenerated document includes auth.confirm and auth.resendConfirmation, no drift Document unchanged by this phase; passes once committed
+- [x] T047 Update `specs/001-recurring-budget-planner/contracts/procedures.md` if auth.register or auth.signIn changed (mark as MODIFIED in 002 contracts, but maintain feature 001 docs as source of truth for non-email features) 001's `register` and `signIn` entries now point at 002
+- [x] T048 Verify `pnpm lint`, `pnpm typecheck`, `pnpm format` all pass
+- [x] T049 Verify coverage floors: 90% in packages/core (no core changes expected), 70% repo-wide (auth changes covered) 89.68 % lines repo-wide (floor 70); `packages/core` untouched
 - [x] T050 Retire `HANDOFF.md`, which is not a spec-kit artifact (`tasks.md` checkboxes are the resume state). Its durable content moved: the service-worker lesson to [ADR 0010](../../decisions/0010-service-worker-cache-invalidation.md), the `core` conventions to feature 001's `plan.md` structure notes, the commands and the `--workers=1` note to feature 001's `quickstart.md`, the worker-tsconfig note to the comment in `eslint.config.js`. Feature 001's resume point is its own `tasks.md`: T119
-- [ ] T051 [P] Write `specs/002-email-verification/quickstart.md`: local Mailpit setup, SMTP env vars for Postmark/AWS SES, how to test confirmation flow locally, how to verify an account is confirmed vs unconfirmed
+- [x] T051 [P] Write `specs/002-email-verification/quickstart.md`: local Mailpit setup, SMTP env vars for Postmark/AWS SES, how to test confirmation flow locally, how to verify an account is confirmed vs unconfirmed
 - [ ] T052 [P] Document the two registration-screen bug fixes in the commit message or PR description: `router.prefetch`→navigation (FR-013, T021), misleading German copy (FR-014, T022)
 
 **Checkpoint**: Feature complete, all tests green, documentation updated.
@@ -189,8 +189,8 @@ Monorepo layout from [plan.md](./plan.md#project-structure): `packages/core`, `p
 - [x] T054 `auth.confirm` could never succeed: it queried `confirmation_tokens` with no workspace set, under forced RLS. Fixed by carrying the workspace id in the link and scoping the lookup to it, with no new `SECURITY DEFINER` function ([ADR 0009](../../decisions/0009-confirmation-link-carries-workspace.md)); `auth.resendConfirmation` reuses `app_authenticate`. Also: single transaction with `for update`, `confirmation_failed` audited, `packages/auth/tests/confirm-token-link.unit.test.ts`
 - [x] T055 Repair what feature 002's "register issues no session" broke in feature 001's tests: a shared `packages/api/tests/support/session.ts` for five API fixtures, `sign-in`/`register`/`throttle` expectations, the error-catalogue and exempt-procedure guards, the OpenAPI document, and a shared `apps/web/tests/support/account.ts` (register, read Mailpit, confirm) for six e2e specs
 - [x] T056 T008/T009 were unreachable (`*.test.ts` matches no Vitest project; the convention is `*.unit.test.ts`) and T009 was placeholders. Renamed, rewritten as real tests, and fixed what they found: `email.ts` logged the recipient's address (Article VIII), and had no SMTP timeouts, so one stalled socket hung registration for 75 s
-- [ ] T057 Enumeration timing (belongs with US3, T029): on a genuine registration the request does extra work (token insert, SMTP send) that a duplicate registration does not, so the two are not yet in the same timing class (ADR 0003). Decide between not awaiting the send and padding the duplicate path, then assert it
-- [ ] T058 `contracts/errors.md` says a link used twice returns `ALREADY_CONFIRMED`; spec scenario 4, FR-007 and `procedures.md` say `TOKEN_INVALID`, and the implementation (single-use, token deleted) follows the spec. `ALREADY_CONFIRMED` is therefore only reachable when an account is confirmed by other means while a token is still live. Reconcile the contract text, or drop the code
+- [x] T057 Enumeration timing (belongs with US3, T029): on a genuine registration the request does extra work (token insert, SMTP send) that a duplicate registration does not, so the two are not yet in the same timing class (ADR 0003). Decide between not awaiting the send and padding the duplicate path, then assert it Done: ADR 0011, with the measured residual stated rather than claimed away
+- [x] T058 `contracts/errors.md` says a link used twice returns `ALREADY_CONFIRMED`; spec scenario 4, FR-007 and `procedures.md` say `TOKEN_INVALID`, and the implementation (single-use, token deleted) follows the spec. `ALREADY_CONFIRMED` is therefore only reachable when an account is confirmed by other means while a token is still live. Reconcile the contract text, or drop the code Contract text reconciled with the spec; `confirmation_failed` now carries `detail.reason` as the contract says (red then green)
 - [x] T059 The `e2e` job in `.github/workflows/ci.yml` started PostgreSQL only, but every e2e spec registers through the email flow and reads the mail back from Mailpit. Added a pinned Mailpit service with a health check and the `SMTP_*` and `APP_BASE_URL` env to that job. Confirmed by the first CI run: registration, confirmation, resend and scanner-safety specs passed against the Mailpit service
 - [x] T060 `nodemailer@~6.9` carried eleven advisories at high or moderate severity, on the mail path of an authentication feature, and failed the CI `audit` job. Upgraded to `~10.1.7` (`@types/nodemailer@~8.0.2`; named imports, since 10.x is ESM). Real SMTP delivery re-verified end to end against Mailpit on desktop and mobile
 - [x] T061 First CI run, ten e2e failures in three groups, none reproducible on the development Mac: (a) axe `target-size` on the plain text links of the auth screens (`Bereits registriert? Anmelden.` and the like): 19 px high with 23 px to the button above, one pixel short of axe's 24 px offset rule. It depends on the platform's font metrics, so it passed locally. The links now use the design system's `btn btn--ghost btn--block`, like every other link in the app, and the auth scans assert the repo's `expectTouchTargets` 44 px floor, which does not depend on fonts (observed red on four tests, then green). (b) `us3-offline` asserted `getByRole("alert")`, which also matches Next's empty, always-present route announcer: on a fast machine it passed on the announcer before the error rendered, on CI the error rendered first and strict mode threw. It now asserts the page's own `p[role="alert"]`. (c) Fixing (b) exposed that the test's closing `page.reload()` races `@serwist/next`'s default `reloadOnOnline`, and that its `not.toBeVisible()` also passes on a page that has not rendered. It now waits for the automatic reload and asserts the empty state

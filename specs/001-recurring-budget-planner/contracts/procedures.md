@@ -24,11 +24,13 @@ out  { userId: uuid, workspaceId: uuid }
 
 - Password minimum 12 characters. No composition rules; length is the control
   that matters and argon2id does the rest, per ADR 0003.
-- Sets the `__Host-session` cookie on success.
+- **Superseded by feature 002**: registration no longer sets a session cookie.
+  The account is created unconfirmed, a confirmation link is emailed, and a
+  session exists only after `auth.confirm`. See
+  [002 procedures](../../002-email-verification/contracts/procedures.md).
 - Response does not reveal whether the address was already registered, per ADR
-  0003. A collision returns the same shape and timing class as success and the
-  user is told to check their inbox — this release sends no mail, so the flow
-  ends there for a duplicate.
+  0003. A collision returns the same shape and timing class as success, sends
+  no mail and creates nothing.
 - Appends nothing to `audit_events`; registration is not in FR-006's list.
 
 Errors: `VALIDATION_FAILED`, `RATE_LIMITED`.
@@ -42,7 +44,8 @@ in   { email: string(email), password: string }
 out  { workspaceId: uuid }
 ```
 
-- Sets the `__Host-session` cookie on success.
+- Sets the `__Host-session` cookie on success. Feature 002 adds
+  `ACCOUNT_NOT_CONFIRMED`, returned only after the password verified.
 - A wrong password, an unknown address and a throttled attempt return the
   identical `AUTH_FAILED` error, per FR-005 and ADR 0003.
 - Appends `sign_in_succeeded` or `sign_in_failed` to `audit_events`, per FR-006.
