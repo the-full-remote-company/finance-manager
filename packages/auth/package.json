@@ -13,7 +13,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint . --no-error-on-unmatched-pattern"
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "mail:test": "node --env-file=../../.env.local scripts/send-test-email.ts"
   },
   "dependencies": {
     "@finance/core": "workspace:*",

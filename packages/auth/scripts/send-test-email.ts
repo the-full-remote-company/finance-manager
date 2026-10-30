@@ -4,7 +4,7 @@
  * Useful for verifying local Mailpit and production provider setup.
  *
  * Usage:
- *   pnpm node scripts/send-test-email.ts recipient@example.com
+ *   pnpm --filter @finance/auth mail:test recipient@example.com
  *
  * Requires:
  *   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM in .env.local
@@ -21,7 +21,7 @@ const recipient = process.argv[2];
 
 if (!smtpHost || !smtpPort || !smtpFrom || !recipient) {
   console.error("Missing SMTP config or recipient.");
-  console.error("Usage: pnpm node scripts/send-test-email.ts recipient@example.com");
+  console.error("Usage: pnpm --filter @finance/auth mail:test recipient@example.com");
   console.error("Requires: SMTP_HOST, SMTP_PORT, SMTP_FROM in .env.local");
   process.exit(1);
 }
@@ -50,7 +50,7 @@ transporter
     console.log(`✓ Test email sent to ${recipient}`);
     process.exit(0);
   })
-  .catch((err) => {
-    console.error("✗ Email send failed:", err.message);
+  .catch((err: unknown) => {
+    console.error("✗ Email send failed:", err instanceof Error ? err.message : String(err));
     process.exit(1);
   });
