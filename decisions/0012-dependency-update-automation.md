@@ -69,20 +69,18 @@ documentation states that for this format "the dependency graph does not detect
 the dependencies in that file", and that Dependabot version updates still work
 but Dependabot alerts and security updates are not created.
 
-What was observed, and what was not: on 2026-10-30 the dependency-graph SBOM
-endpoint for this repository returned 404, which is consistent with GitHub
-having built no dependency graph from the lockfile. The repository also reports
-0 Dependabot alerts, but that was read after the advisories had been cleared, so
-it proves nothing by itself. Whether alerts would have fired during the weeks
-this repository carried about 30 advisories was never measured. Treat the
-documented limitation, plus the 404, as the evidence, and re-check after the
-lockfile format changes (001 T164).
+**Correction (2026-11-07).** An earlier version of this section read the 404 from
+the dependency-graph SBOM endpoint as "consistent with" GitHub being unable to
+parse the lockfile. That inference was wrong. The repository's **dependency graph
+setting was simply off** (organisation default for new repositories: off), so
+GitHub had parsed nothing, not even the plain `package.json` files. The lockfile
+format was never the only thing in the way, and the 404 told us nothing about it.
 
 Consequences:
 
-- **`pnpm audit` is the only vulnerability scanner that works.** That is why it
-  is a required gate and why it also runs on a schedule. The scheduled job is
-  not a duplicate of GitHub's alerts; it replaces them.
+- **`pnpm audit` is the required gate and runs on a schedule.** It is not made
+  redundant by GitHub's alerts: it checks what is installed (overrides included),
+  they check what is declared. Each caught something the other cannot.
 - Version updates, which are what this ADR adds, are unaffected. They will still
   propose the bumps that fix advisories, just without being labelled as
   security updates.
@@ -114,12 +112,35 @@ without the setting switches pnpm versions and brings the boot document back.
 Not tested: a different pnpm *major*. A lockfile that another pnpm writes
 differently fails `--frozen-lockfile` in CI, which is where drift is caught.
 
-**Not yet observed:** that GitHub's dependency graph then reads the file. It is
-built from the default branch, so this can only be checked after merge: the SBOM
-endpoint (`repos/{owner}/{repo}/dependency-graph/sbom`) should answer 200 instead
-of 404, and `repos/{owner}/{repo}/dependabot/alerts` should work. If it does not,
-revert the commit; the previous two-document lockfile is in the history. This ADR
-is amended with the outcome either way.
+**Observed (2026-11-07), after the dependency graph was switched on:** GitHub
+detected 10 manifests including `pnpm-lock.yaml` (parseable), the SBOM endpoint
+answers 200 with 662 packages, and it records exact lockfile resolutions that a
+`package.json` range cannot give: `glob` 14.0.4 and `minimatch` 11.0.5 (our
+overrides), `next` 16.4.3, `typescript` 6.0.3. So the single-document lockfile is
+read correctly.
+
+**Not established:** whether the old two-document lockfile would also have been
+read now that the graph is on. GitHub's documentation says it would not; it was
+not tested, because the graph only builds from the default branch and the old
+file would have to be restored there. The single-document form costs little (see
+above) and is confirmed to work, so it stays.
+
+**Alerts work, and found something `pnpm audit` could not.** Two high-severity
+alerts opened at once: `zod` below 4.6.6, declared as an exact `4.6.5` in
+`apps/web/package.json` and `packages/api/package.json`. `pnpm audit` reported
+nothing because pnpm overrides rewrite *direct* declarations in the lockfile too:
+an override added for a transitive `zod` had silently pinned our own dependency to
+4.6.7 there, while the manifests kept the stale version. The installed code was
+safe; the declarations were not, and removing the override would have reinstated
+4.6.5 unnoticed. Fixed by declaring 4.6.7 in both manifests (the override stays,
+since `@serwist/next` still pins `zod` 4.6.5 transitively). Lesson: an override
+fixes what is installed, not what is declared; `pnpm audit` reads the former and
+GitHub's alerts read the latter, so they are complementary, not redundant.
+
+**Still off:** Dependabot security updates and grouped security updates (the
+repository setting). Alerts now fire, but nothing opens a fix pull request for
+them automatically; version updates (`dependabot.yml`) are unaffected. Whether to
+enable it is a separate decision (001 T165).
 
 **Other things Dependabot does not cover:**
 
