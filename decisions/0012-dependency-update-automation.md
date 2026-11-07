@@ -103,9 +103,15 @@ task (001 T164), not folded into this one.
 - The pnpm `overrides` in `pnpm-workspace.yaml`. The scheduled audit flags one
   that has become vulnerable; nothing flags one that has become dead because its
   parent moved on. That needs a person at each audit.
-- Image tags in the CI workflow's `services:` blocks (`postgres`, `mailpit`).
-  Only `docker-compose.yml` is scanned, so the same image is tracked in one
-  place and can drift in the other.
+- Image tags in the CI workflow's `services:` blocks. Only `docker-compose.yml`
+  is scanned, so an image declared in both places drifts: Mailpit did, within
+  hours of the first Dependabot pull request (CI on 1.31.6, local on 1.32.0).
+  Mitigated since: CI starts Mailpit from `docker-compose.yml` (one declaration),
+  and `scripts/verify-image-pins.mjs` fails the build if any image is unpinned
+  or pinned to different tags in different files. `postgres:17-alpine` is still
+  declared in the compose file and in three CI jobs, kept equal by that check;
+  because only a major version is pinned and Dependabot ignores majors, nothing
+  proposes a bump there at all.
 - The Node version in `.nvmrc`.
 
 **Operational limits of the scheduled audit.** GitHub disables scheduled
