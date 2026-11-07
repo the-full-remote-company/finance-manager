@@ -212,8 +212,13 @@ update and for `@tfrc/*`. They run the same gates as any other pull request, and
 nothing merges itself. Read the major ones and the design-system ones; the gates
 catch breakage, not intent.
 
-`pnpm audit` is the vulnerability scanner that works here (GitHub's own alerts
-cannot read the lockfile, see [ADR 0012](../../decisions/0012-dependency-update-automation.md)).
+`pnpm audit` is the scanner this repository relies on. GitHub's own alerts could
+not read the two-document lockfile pnpm 12 wrote, so `pnpm-workspace.yaml` sets
+`pmOnFail: ignore` to keep it single-document (see
+[ADR 0012](../../decisions/0012-dependency-update-automation.md); whether GitHub
+now reads it is confirmed there once observed). The cost: pnpm no longer switches
+to the version in `packageManager` on your machine, so install pnpm 12.4.2 to
+match CI.
 It runs on every pull request and again on weekdays through
 `.github/workflows/dependency-audit.yml`, which can also be started by hand from
 the Actions tab. When it goes red, bump the dependency; for a transitive package

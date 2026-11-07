@@ -4,6 +4,17 @@ packages:
 
 # pnpm 12 reads settings here rather than from package.json.
 #
+# pmOnFail: ignore keeps pnpm-lock.yaml a single YAML document (001 T164, ADR 0012).
+# While pnpm checks its own version against the `packageManager` field it writes
+# a second, leading "boot document" into the lockfile, and GitHub's dependency
+# graph does not detect dependencies in a two-document file, so Dependabot alerts
+# and security updates never fire. The boot document appears for every pmOnFail
+# value except `ignore` (tested). The cost: pnpm no longer switches or warns when
+# it runs at a different version than `packageManager`. CI still gets the pinned
+# version from `packageManager` through pnpm/action-setup, and a lockfile written
+# by another pnpm that differs fails `pnpm install --frozen-lockfile` there.
+pmOnFail: ignore
+#
 # Install scripts run only for the packages listed below. Anything else is a
 # supply-chain decision that has to be made deliberately, which is the same
 # reason "Baseline security controls" requires dependency vulnerability
