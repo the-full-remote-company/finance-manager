@@ -31,6 +31,14 @@ services:
       # Access web UI at http://localhost:8025
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    # The image is built from scratch, so the check is its own binary. CI waits
+    # on this (docker compose up --wait) instead of declaring a second copy of
+    # the service, which is how the two versions drifted apart.
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
 volumes:
   db-data:

@@ -28,6 +28,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format
+      - run: pnpm verify:image-pins
 
   unit:
     name: Unit tests and coverage floors
@@ -131,17 +132,6 @@ jobs:
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
-      # Registration sends no session: every spec confirms an account through
-      # the emailed link, so the run needs a mail catcher it can read back
-      # (apps/web/tests/support/account.ts). Pinned, like every other image.
-      mailpit:
-        image: axllent/mailpit:v1.31.6
-        ports: ["1025:1025", "8025:8025"]
-        options: >-
-          --health-cmd "/mailpit readyz"
-          --health-interval 2s
-          --health-timeout 3s
-          --health-retries 30
     env:
       # 127.0.0.1, not localhost: Node resolves localhost to ::1 first, and an
       # IPv6 port proxy to the container can stall an SMTP connection.
@@ -159,6 +149,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: psql "$DATABASE_URL_OWNER" -f packages/db/scripts/init-roles.sql
       - run: pnpm db:migrate
+      # Registration sends no session: every spec confirms an account through
+      # the emailed link, so the run needs a mail catcher it can read back
+      # (apps/web/tests/support/account.ts). Started from docker-compose.yml, not
+      # declared a second time here: a duplicate pin drifted once already, and
+      # scripts/verify-image-pins.mjs now fails the build if one comes back.
+      - run: docker compose up -d --wait mailpit
       - run: pnpm exec playwright install --with-deps chromium
       # Article IV: the accessibility scan runs inside the end-to-end run, and
       # a serious or critical violation fails the build.
