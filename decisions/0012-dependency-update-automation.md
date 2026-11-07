@@ -87,16 +87,39 @@ Consequences:
   propose the bumps that fix advisories, just without being labelled as
   security updates.
 
-**A tested remedy exists and was deliberately not applied here.** On a scratch
-copy of the repository: removing the first document by hand and setting
-`pmOnFail: ignore` in `pnpm-workspace.yaml` gave a single-document lockfile
-that `pnpm install --frozen-lockfile` accepted, that later lockfile updates kept
-single-document, and that was byte-identical to the project half of the current
-file (no version changes). `pmOnFail: ignore` alone does nothing to an existing
-lockfile. The cost is that pnpm stops switching contributors to the pinned
-version, so a contributor on a different pnpm could write a differently-shaped
-lockfile. That changes everyone's toolchain, so it is recorded as a separate
-task (001 T164), not folded into this one.
+**Remedy, applied on 2026-10-30 (001 T164): `pmOnFail: ignore`.** The boot
+document is written whenever pnpm checks its own version against the
+`packageManager` field. Tested on scratch copies, every setting that keeps the
+check produces it, and only `ignore` does not:
+
+| Setting | Boot document |
+|---|---|
+| `packageManager` pinned, `pmOnFail` default (`download`), `warn` or `error` | yes |
+| `devEngines.packageManager` with `onFail` `download`, `warn` or `error` | yes |
+| `pmOnFail: ignore`, or `devEngines.packageManager` with `onFail: ignore` | no |
+
+So `devEngines`, which can pin a version range, is not a way round it: a
+single-document lockfile and pnpm enforcing a pinned version are mutually
+exclusive. `pnpm-workspace.yaml` now sets `pmOnFail: ignore`, and the lockfile's
+first document was removed once, because the setting alone does not change an
+existing lockfile. The `packageManager` field stays: CI still reads it through
+`pnpm/action-setup`, and tooling that looks for the version still finds it.
+
+What was checked: the project half of the lockfile is byte-identical to before
+(no dependency changed); `pnpm install --frozen-lockfile` accepts it; a full
+re-resolution leaves it unchanged. The cost scenario was tested directly: pnpm
+12.9.1 (the repository pins 12.4.2) accepts the lockfile, runs a frozen install,
+does not rewrite it and keeps it single-document, whereas the same version
+without the setting switches pnpm versions and brings the boot document back.
+Not tested: a different pnpm *major*. A lockfile that another pnpm writes
+differently fails `--frozen-lockfile` in CI, which is where drift is caught.
+
+**Not yet observed:** that GitHub's dependency graph then reads the file. It is
+built from the default branch, so this can only be checked after merge: the SBOM
+endpoint (`repos/{owner}/{repo}/dependency-graph/sbom`) should answer 200 instead
+of 404, and `repos/{owner}/{repo}/dependabot/alerts` should work. If it does not,
+revert the commit; the previous two-document lockfile is in the history. This ADR
+is amended with the outcome either way.
 
 **Other things Dependabot does not cover:**
 
@@ -121,16 +144,17 @@ the person who last edited the schedule, not a team.
 ## Not verified at the time of writing
 
 Dependabot reads its configuration from the default branch only, so none of the
-following could be observed before merge:
+following could be observed before merge. **Both were observed afterwards
+(2026-10-30):**
 
 - that it discovers `apps/web` and `packages/*` from the root manifest through
-  `pnpm-workspace.yaml`. **This is the assumption to check first.** The first
-  batch of pull requests should include a dependency declared in
-  `apps/web/package.json` or a `packages/*` manifest. If it does not, replace
-  `directory: /` with `directories` listing the workspace packages and group by
-  dependency name, so one dependency is one pull request across directories;
-- that its pull requests keep `pnpm-lock.yaml` consistent, so that
-  `pnpm install --frozen-lockfile` in CI passes on them.
+  `pnpm-workspace.yaml`: yes. Its first grouped pull requests (#8, #9) changed
+  `apps/web/package.json` and every `packages/*` manifest together with the
+  shared lockfile, so `directory: /` is enough and the `directories` fallback
+  was not needed;
+- that its pull requests keep `pnpm-lock.yaml` consistent: yes.
+  `pnpm install --frozen-lockfile` passed in CI on all eight of its first pull
+  requests.
 
 What was checked beforehand: the configuration against the SchemaStore
 `dependabot-2.0` schema (which also rejects a deliberately broken copy), the
