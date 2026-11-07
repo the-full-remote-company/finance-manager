@@ -137,10 +137,42 @@ since `@serwist/next` still pins `zod` 4.6.5 transitively). Lesson: an override
 fixes what is installed, not what is declared; `pnpm audit` reads the former and
 GitHub's alerts read the latter, so they are complementary, not redundant.
 
-**Still off:** Dependabot security updates and grouped security updates (the
-repository setting). Alerts now fire, but nothing opens a fix pull request for
-them automatically; version updates (`dependabot.yml`) are unaffected. Whether to
-enable it is a separate decision (001 T165).
+**Security updates: enabled (2026-11-07, 001 T165).** The repository setting
+"Dependabot security updates" is on; "grouped security updates" is deliberately
+left off. This is a repository setting, not a file, so it is not version-controlled
+and is recorded here instead. Verify it with
+`gh api repos/{owner}/{repo}/automated-security-fixes` (`enabled: true`); undo it
+with `gh api -X DELETE` on the same path.
+
+Why on: the version updates in `dependabot.yml` run weekly behind a 7-day cooldown,
+so a fix released today can take up to about two weeks to reach a pull request.
+Security updates are exempt from the cooldown and, per GitHub's documentation, do
+not read the `ignore` entries in `dependabot.yml`. They turn a red audit run, which
+only tells someone something is wrong (the scheduled workflow notifies only the
+last person to edit its schedule), into a ready pull request that runs every gate.
+Nothing auto-merges.
+
+Why grouped is off: a security fix should be small and reviewable alone, one bad
+bump should not block the others, and alerts are rare now that dependencies are
+current (two so far, both `zod`). Turn grouping on if three or more arrive at once.
+
+Auto-triage rules: one is enabled, which is almost certainly GitHub's preset that
+auto-dismisses low-impact alerts on npm development dependencies (on by default
+for public repositories; the rule itself is only readable in the UI, so this is an
+inference). It is left alone: it hides only low-impact alerts in dev tooling, and
+the required `pnpm audit --audit-level moderate` gate catches those independently.
+Custom rules exist for public repositories and can choose which alerts get fix pull
+requests; not used, because they add more configuration that lives only in the UI.
+
+Limits, so nobody expects more than it does: it cannot fix a transitive package
+whose parent pins the vulnerable version (Dependabot reports an error on the
+alert; the `overrides` in `pnpm-workspace.yaml` remain a person's job, as with
+`glob`, `minimatch` and `zod`), and it opens one pull request per alert, each
+touching the shared lockfile, so Dependabot will rebase them against each other.
+
+**Not yet observed:** a real security-update pull request. No alert has been open
+since the setting was enabled, so only the setting itself is confirmed. Record the
+first one here when it happens.
 
 **Other things Dependabot does not cover:**
 
