@@ -28,6 +28,13 @@ allowBuilds:
 #   esbuild          via drizzle-kit > @esbuild-kit/* (0.18 -> 0.25: dev-only
 #                    config loader; verified by running `db:reset`)
 #   fast-uri         via stylelint > table > ajv
+#   glob             via @serwist/next > @serwist/build (build-time precache
+#                    manifest; 9.5.13 pins glob 13.0.6 exactly and the first
+#                    patched release is 14.0.2, so no parent upgrade can fix
+#                    this). 13 -> 14 is a major jump, verified by comparing the
+#                    generated service worker's precache list before and after
+#   minimatch        via glob, eslint and typescript-eslint (10 -> 11, the first
+#                    patched major; dev tooling plus the glob above)
 #   qs               via trpc-to-openapi > co-body
 #   source-map-js    via next > postcss
 #   vite             via vitest > @vitest/mocker
@@ -36,6 +43,8 @@ overrides:
   "brace-expansion@<5.0.12": "5.0.12"
   "esbuild@<0.25.0": "0.25.12"
   "fast-uri@<3.1.9": "3.1.9"
+  "glob@<14.0.2": "14.0.4"
+  "minimatch@<11.0.1": "11.0.5"
   "qs@<6.16.1": "6.16.1"
   "source-map-js@<1.2.2": "1.2.2"
   "vite@<8.3.3": "8.3.5"
