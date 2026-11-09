@@ -20,7 +20,7 @@
     "@finance/core": "workspace:*",
     "@finance/db": "workspace:*",
     "@node-rs/argon2": "2.2.2",
-    "nodemailer": "~10.2.1"
+    "nodemailer": "~10.3.1"
   },
   "devDependencies": {
     "@types/nodemailer": "~8.0.2"
